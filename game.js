@@ -19,6 +19,14 @@ class RockClimbingGame {
         this.inclineRate = 0.002; // Elevation increase per pixel (gentle slope)
         this.maxInclination = 200; // Maximum elevation increase
         
+        // Camera system
+        this.camera = {
+            y: 0, // Current camera Y offset
+            targetY: 0, // Target camera Y position
+            smoothing: 0.1, // Camera smoothing factor (0.1 = smooth, 1.0 = instant)
+            threshold: this.canvas.height * 0.5 // Trigger camera movement when player above 50% height
+        };
+        
         // Player (Mountain Goat)
         this.player = {
             x: 100,
@@ -98,6 +106,23 @@ class RockClimbingGame {
     getGroundYAtPosition(screenX) {
         const worldX = this.totalDistance + screenX;
         return this.getCurrentGroundY(worldX);
+    }
+    
+    // Update camera to keep player in lower portion of screen
+    updateCamera() {
+        // Calculate player's screen position (world position - camera offset)
+        const playerScreenY = this.player.y - this.camera.y;
+        
+        // If player is above the threshold (50% of screen height), move camera up
+        if (playerScreenY < this.camera.threshold) {
+            // Calculate how much to move camera up to keep player at threshold
+            const targetOffset = this.player.y - this.camera.threshold;
+            this.camera.targetY = Math.max(0, targetOffset); // Don't go below 0
+        }
+        
+        // Smooth camera movement
+        const diff = this.camera.targetY - this.camera.y;
+        this.camera.y += diff * this.camera.smoothing;
     }
     
     init() {
@@ -186,6 +211,8 @@ class RockClimbingGame {
         this.currentTerrainLevel = 0;
         this.obstaclesCleared = 0;
         this.totalDistance = 0; // Reset distance tracking
+        this.camera.y = 0; // Reset camera position
+        this.camera.targetY = 0;
         this.player.y = this.baseGroundY - 50;
         this.player.targetY = this.baseGroundY - 50;
         this.player.velocityY = 0;
@@ -386,6 +413,9 @@ class RockClimbingGame {
         // Update terrain transition
         this.updateTerrainTransition();
         
+        // Update camera to follow player elevation
+        this.updateCamera();
+        
         // Update player physics
         this.player.velocityY += this.gravity;
         this.player.y += this.player.velocityY;
@@ -573,19 +603,20 @@ class RockClimbingGame {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw mountain background layers (adjusted for gradual elevation)
+        // Draw mountain background layers (adjusted for gradual elevation and camera)
         ctx.fillStyle = '#000000';
         const elevationOffset = Math.min(this.totalDistance * this.inclineRate * 0.3, this.maxInclination * 0.3);
+        const cameraOffset = this.camera.y * 0.2; // Parallax effect for background
         
         // Far mountains (move with elevation for depth effect)
-        ctx.fillRect(0, this.canvas.height - 120 - elevationOffset, this.canvas.width, 20);
-        ctx.fillRect(100, this.canvas.height - 140 - elevationOffset * 1.2, 200, 40);
-        ctx.fillRect(400, this.canvas.height - 130 - elevationOffset * 0.8, 300, 30);
+        ctx.fillRect(0, this.canvas.height - 120 - elevationOffset - cameraOffset, this.canvas.width, 20);
+        ctx.fillRect(100, this.canvas.height - 140 - elevationOffset * 1.2 - cameraOffset, 200, 40);
+        ctx.fillRect(400, this.canvas.height - 130 - elevationOffset * 0.8 - cameraOffset, 300, 30);
         
         // Draw mountain clouds
         this.clouds.forEach(cloud => {
             const cloudX = Math.floor(cloud.x / 4) * 4;
-            const cloudY = Math.floor(cloud.y / 4) * 4;
+            const cloudY = Math.floor((cloud.y - this.camera.y * 0.1) / 4) * 4; // Slight parallax for clouds
             
             ctx.fillStyle = '#C0C0C0';
             // Draw cloud shape with rounded appearance
@@ -598,7 +629,7 @@ class RockClimbingGame {
         // Draw weather clouds (storm clouds) with proper cloud shape
         this.weatherClouds.forEach(cloud => {
             const cloudX = Math.floor(cloud.x / 4) * 4;
-            const cloudY = Math.floor(cloud.y / 4) * 4;
+            const cloudY = Math.floor((cloud.y - this.camera.y * 0.15) / 4) * 4; // Parallax for weather clouds
             
             if (cloud.isStorm) {
                 ctx.fillStyle = '#404040';
@@ -632,8 +663,8 @@ class RockClimbingGame {
         // Draw ground segments that follow the incline
         const segmentWidth = 20;
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += segmentWidth) {
-            const groundY1 = this.getGroundYAtPosition(x);
-            const groundY2 = this.getGroundYAtPosition(x + segmentWidth);
+            const groundY1 = this.getGroundYAtPosition(x) - this.camera.y;
+            const groundY2 = this.getGroundYAtPosition(x + segmentWidth) - this.camera.y;
             
             // Draw main ground segment
             ctx.fillRect(x, groundY1, segmentWidth, 4);
@@ -655,7 +686,7 @@ class RockClimbingGame {
         
         // Add rocky texture details on visible terrain
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += 45) {
-            const groundY = this.getGroundYAtPosition(x);
+            const groundY = this.getGroundYAtPosition(x) - this.camera.y;
             ctx.fillRect(x + 10, groundY - 6, 8, 6);
             ctx.fillRect(x + 25, groundY - 4, 6, 4);
         }
@@ -664,7 +695,7 @@ class RockClimbingGame {
         this.leaves.forEach(leaf => {
             if (!leaf.collected) {
                 const lx = Math.floor(leaf.x / 2) * 2;
-                const ly = Math.floor((leaf.y + Math.sin(leaf.floatOffset) * 5) / 2) * 2; // Floating animation
+                const ly = Math.floor((leaf.y + Math.sin(leaf.floatOffset) * 5 - this.camera.y) / 2) * 2; // Floating animation with camera
                 
                 ctx.fillStyle = '#2E7D32'; // Green color for leaf
                 // Draw leaf shape (pixelated)
@@ -684,7 +715,7 @@ class RockClimbingGame {
         // Draw player (Mountain Goat) - pixelated monochrome style
         ctx.fillStyle = '#000000';
         const px = Math.floor(this.player.x / 2) * 2;
-        const py = Math.floor(this.player.y / 2) * 2;
+        const py = Math.floor((this.player.y - this.camera.y) / 2) * 2;
         
         // Goat body (pixelated)
         ctx.fillRect(px + 8, py + 20, 24, 16);
@@ -721,7 +752,7 @@ class RockClimbingGame {
         ctx.fillStyle = '#000000';
         this.obstacles.forEach(obstacle => {
             const ox = Math.floor(obstacle.x / 2) * 2;
-            const oy = Math.floor(obstacle.y / 2) * 2;
+            const oy = Math.floor((obstacle.y - this.camera.y) / 2) * 2;
             
             // Draw different rock shapes based on obstacle type
             switch(obstacle.type) {
@@ -779,7 +810,7 @@ class RockClimbingGame {
         // Draw rain drops
         ctx.fillStyle = '#6B9BD1';
         this.rainDrops.forEach(drop => {
-            ctx.fillRect(Math.floor(drop.x), Math.floor(drop.y), 1, 4);
+            ctx.fillRect(Math.floor(drop.x), Math.floor(drop.y - this.camera.y), 1, 4);
         });
         
         // Draw lightning
@@ -789,8 +820,8 @@ class RockClimbingGame {
             ctx.beginPath();
             
             this.lightning.segments.forEach(segment => {
-                ctx.moveTo(segment.x1, segment.y1);
-                ctx.lineTo(segment.x2, segment.y2);
+                ctx.moveTo(segment.x1, segment.y1 - this.camera.y);
+                ctx.lineTo(segment.x2, segment.y2 - this.camera.y);
             });
             
             ctx.stroke();
@@ -802,8 +833,8 @@ class RockClimbingGame {
                 ctx.beginPath();
                 
                 this.lightning.segments.forEach(segment => {
-                    ctx.moveTo(segment.x1, segment.y1);
-                    ctx.lineTo(segment.x2, segment.y2);
+                    ctx.moveTo(segment.x1, segment.y1 - this.camera.y);
+                    ctx.lineTo(segment.x2, segment.y2 - this.camera.y);
                 });
                 
                 ctx.stroke();
