@@ -3,7 +3,6 @@
     padding: 0;
     box-sizing: border-box;
 }
-
 body {
     font-family: 'Courier New', monospace;
     background: #F7F7F7;
@@ -13,40 +12,22 @@ body {
     justify-content: center;
     color: #000;
 }
-
 .container {
     background: #FFFFFF;
     border: 2px solid #000000;
     padding: 1rem;
     text-align: center;
 }
-
-header h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    color: #000000;
-    font-weight: bold;
-    letter-spacing: 2px;
-}
-
-header p {
-    font-size: 1rem;
-    color: #000000;
-    margin-bottom: 1rem;
-}
-
 .game-area {
     position: relative;
     display: inline-block;
 }
-
 #gameCanvas {
     border: 2px solid #000000;
     background: #FFFFFF;
     display: block;
     margin: 0 auto 1rem;
 }
-
 .game-ui {
     display: flex;
     justify-content: space-between;
@@ -55,38 +36,22 @@ header p {
     margin: 0 auto;
     padding: 0 1rem;
 }
-
 .game-controls {
     display: flex;
     gap: 1rem;
 }
-
-.game-instructions {
-    text-align: center;
-    margin-top: 1rem;
-}
-
-#gameMessage {
-    font-size: 1rem;
-    color: #000000;
-    font-weight: bold;
-}
-
 .score-display {
     font-size: 1rem;
     font-weight: bold;
     color: #000000;
 }
-
 .score-label {
     margin-right: 0.5rem;
 }
-
 #scoreValue {
     color: #000000;
     font-size: 1.2rem;
 }
-
 .game-button {
     background: #FFFFFF;
     color: #000000;
@@ -99,26 +64,19 @@ header p {
     text-transform: uppercase;
     letter-spacing: 1px;
 }
-
 .game-button:hover {
     background: #000000;
     color: #FFFFFF;
 }
-
 .game-button:active {
     background: #808080;
     color: #FFFFFF;
 }
-
-footer {
+.instructions {
     margin-top: 1rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid #000000;
-    color: #000000;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+    color: #666;
 }
-
-/* Responsive design */
 @media (max-width: 900px) {
     .container {
         margin: 1rem;
@@ -135,19 +93,4 @@ footer {
         flex-direction: column;
         gap: 0.5rem;
     }
-    
-    header h1 {
-        font-size: 1.5rem;
-    }
-}
-
-/* Animation for score updates */
-@keyframes scoreUpdate {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-.score-animate {
-    animation: scoreUpdate 0.2s ease-in-out;
 }

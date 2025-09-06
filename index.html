@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rock Climbing (TBD)</title>
+    <title>Rock Climbing - Terrain Elevation Game</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -18,13 +18,22 @@
                 <div class="game-controls">
                     <button id="startButton" class="game-button">START</button>
                     <button id="pauseButton" class="game-button" style="display: none;">PAUSE</button>
+                    <button id="climbButton" class="game-button" style="display: none;">CLIMB</button>
                     <button id="restartButton" class="game-button" style="display: none;">RESTART</button>
                 </div>
+            </div>
+            <div class="instructions">
+                <p><strong>Controls:</strong> SPACE to CLIMB, P or PAUSE button to pause</p>
+                <p><strong>Goal:</strong> Jump over rocks and climb higher terrain levels!</p>
+                <p><strong>Leaf Power:</strong> Jump to catch leaves and slow down the game by 10%</p>
+                <p>Terrain elevates every 5 obstacles cleared</p>
             </div>
         </main>
     </div>
     
     <script src="webgl-utils.js"></script>
     <script src="game.js"></script>
+        
 </body>
 </html>
+
