@@ -3,29 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebGL Counter Game</title>
+    <title>T-Rex Runner Game</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>WebGL Counter Game</h1>
-            <p>Click the button to increase your score!</p>
+            <h1>T-Rex Runner</h1>
+            <p>Press SPACE to jump over obstacles!</p>
         </header>
         
         <main class="game-area">
-            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <canvas id="gameCanvas" width="800" height="400"></canvas>
             <div class="game-ui">
                 <div class="score-display">
                     <span class="score-label">Score:</span>
                     <span id="scoreValue">0</span>
                 </div>
-                <button id="counterButton" class="game-button">Click Me!</button>
+                <div class="game-controls">
+                    <button id="startButton" class="game-button">Start Game</button>
+                    <button id="pauseButton" class="game-button" style="display: none;">Pause</button>
+                    <button id="restartButton" class="game-button" style="display: none;">Restart</button>
+                </div>
+            </div>
+            <div class="game-instructions">
+                <p id="gameMessage">Press START or SPACEBAR to begin!</p>
             </div>
         </main>
         
         <footer>
-            <p>Built with HTML5, WebGL, CSS3, and JavaScript</p>
+            <p>Built with HTML5 Canvas, CSS3, and JavaScript</p>
         </footer>
     </div>
     
