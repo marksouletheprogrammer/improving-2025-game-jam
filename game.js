@@ -59,6 +59,16 @@ class RockClimbingGame {
         this.clouds = [];
         this.groundOffset = 0;
         
+        // Mountain system for parallax scrolling
+        this.mountainLayers = {
+            farthest: [], // 20% speed
+            far: [],      // 40% speed
+            near: [],     // 60% speed
+            nearest: []   // 80% speed
+        };
+        this.mountainSpawnTimer = 0;
+        this.mountainSpawnInterval = 300; // Spawn mountains every 300 pixels
+        
         // Weather system
         this.weatherClouds = [];
         this.rainDrops = [];
@@ -81,6 +91,7 @@ class RockClimbingGame {
         
         
         this.init();
+        this.initMountains();
         this.setupEventListeners();
         this.gameLoop();
     }
@@ -154,6 +165,150 @@ class RockClimbingGame {
         this.updateUI();
     }
     
+    // Initialize mountain layers with initial mountains
+    initMountains() {
+        const layerConfigs = {
+            farthest: { alpha: 0.3, color: '#A0A0A0', baseHeight: 15, heightVariation: 10, speed: 0.03 },
+            far: { alpha: 0.5, color: '#808080', baseHeight: 25, heightVariation: 15, speed: 0.06 },
+            near: { alpha: 0.7, color: '#606060', baseHeight: 35, heightVariation: 20, speed: 0.09 },
+            nearest: { alpha: 0.85, color: '#404040', baseHeight: 45, heightVariation: 25, speed: 0.12 }
+        };
+        
+        // Initialize each layer with mountains to fill the screen
+        Object.keys(layerConfigs).forEach(layerName => {
+            const config = layerConfigs[layerName];
+            let currentX = -200; // Start off-screen to the left
+            
+            while (currentX < this.canvas.width + 400) {
+                this.spawnMountain(layerName, currentX, config);
+                currentX += Math.random() * 150 + 130; // Further increased spacing between mountains
+            }
+        });
+    }
+    
+    // Spawn a single mountain in the specified layer
+    spawnMountain(layerName, x, config) {
+        const mountain = {
+            x: x,
+            width: Math.random() * 120 + 80,
+            height: config.baseHeight + Math.random() * config.heightVariation,
+            peaks: [] // Store peak data for varied mountain shapes
+        };
+        
+        // Generate mountain peaks for more natural look
+        const peakCount = Math.floor(Math.random() * 3) + 2; // 2-4 peaks per mountain
+        for (let i = 0; i < peakCount; i++) {
+            mountain.peaks.push({
+                x: (mountain.width / peakCount) * i + Math.random() * (mountain.width / peakCount),
+                height: Math.random() * (config.heightVariation * 0.5) + config.baseHeight * 0.5
+            });
+        }
+        
+        this.mountainLayers[layerName].push(mountain);
+    }
+    
+    // Update mountain system - handle scrolling, spawning, and despawning
+    updateMountains() {
+        const layerConfigs = {
+            farthest: { alpha: 0.3, color: '#A0A0A0', baseHeight: 15, heightVariation: 10, speed: 0.03 },
+            far: { alpha: 0.5, color: '#808080', baseHeight: 25, heightVariation: 15, speed: 0.06 },
+            near: { alpha: 0.7, color: '#606060', baseHeight: 35, heightVariation: 20, speed: 0.09 },
+            nearest: { alpha: 0.85, color: '#404040', baseHeight: 45, heightVariation: 25, speed: 0.12 }
+        };
+        
+        // Update mountain spawn timer
+        this.mountainSpawnTimer += this.gameSpeed;
+        
+        Object.keys(this.mountainLayers).forEach(layerName => {
+            const config = layerConfigs[layerName];
+            const mountains = this.mountainLayers[layerName];
+            
+            // Move mountains based on their layer speed
+            mountains.forEach(mountain => {
+                mountain.x -= this.gameSpeed * config.speed;
+            });
+            
+            // Remove mountains that have moved completely off-screen to the left
+            this.mountainLayers[layerName] = mountains.filter(mountain => 
+                mountain.x + mountain.width > -100
+            );
+            
+            // Spawn new mountains on the right side when needed
+            if (this.mountainSpawnTimer > this.mountainSpawnInterval) {
+                const rightmostMountain = mountains.reduce((rightmost, mountain) => 
+                    mountain.x + mountain.width > rightmost ? mountain.x + mountain.width : rightmost, 0
+                );
+                
+                // If there's a gap on the right side, spawn a new mountain
+                if (rightmostMountain < this.canvas.width + 200) {
+                    const spawnX = Math.max(rightmostMountain + Math.random() * 100 + 80, this.canvas.width + 100);
+                    this.spawnMountain(layerName, spawnX, config);
+                }
+            }
+        });
+        
+        // Reset spawn timer periodically
+        if (this.mountainSpawnTimer > this.mountainSpawnInterval) {
+            this.mountainSpawnTimer = 0;
+        }
+    }
+    
+    // Draw all mountain layers with parallax effect (original style but scrolling)
+    drawMountains(ctx) {
+        const elevationOffset = Math.min(this.totalDistance * this.inclineRate * 0.3, this.maxInclination * 0.3);
+        const cameraOffset = this.camera.y * 0.2; // Parallax effect for background
+        
+        // Recreate original static mountain rectangles but make them scroll
+        // Farthest mountains - very light and translucent with varied heights
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#A0A0A0';
+        this.mountainLayers.farthest.forEach(mountain => {
+            const baseY = this.canvas.height - 100 - elevationOffset * 0.5 - cameraOffset * 0.5;
+            ctx.fillRect(mountain.x, baseY, mountain.width, 15);
+            ctx.fillRect(mountain.x + 50, baseY - 10, Math.min(mountain.width - 50, 150), 20);
+            ctx.fillRect(mountain.x + 100, baseY + 5, Math.min(mountain.width - 100, 100), 12);
+        });
+        
+        // Far mountains - light gray, moderately translucent with mountain peaks
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = '#808080';
+        this.mountainLayers.far.forEach(mountain => {
+            const baseY = this.canvas.height - 115 - elevationOffset * 0.7 - cameraOffset * 0.7;
+            ctx.fillRect(mountain.x, baseY, mountain.width, 18);
+            ctx.fillRect(mountain.x + 30, baseY - 10, Math.min(mountain.width - 30, 120), 25);
+            // Add mountain peaks for variety
+            ctx.fillRect(mountain.x + 60, baseY - 20, Math.min(mountain.width - 60, 80), 35);
+            ctx.fillRect(mountain.x + 120, baseY - 15, Math.min(mountain.width - 120, 60), 30);
+        });
+        
+        // Near mountains - medium gray, slightly translucent with more detail
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = '#606060';
+        this.mountainLayers.near.forEach(mountain => {
+            const baseY = this.canvas.height - 120 - elevationOffset - cameraOffset;
+            ctx.fillRect(mountain.x, baseY, mountain.width, 20);
+            ctx.fillRect(mountain.x + 20, baseY - 20, Math.min(mountain.width - 20, 100), 40);
+            // Add ridges and valleys
+            ctx.fillRect(mountain.x + 40, baseY - 30, Math.min(mountain.width - 40, 80), 50);
+            ctx.fillRect(mountain.x + 80, baseY - 15, Math.min(mountain.width - 80, 70), 35);
+        });
+        
+        // Nearest mountains - dark gray, mostly opaque with prominent features
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = '#404040';
+        this.mountainLayers.nearest.forEach(mountain => {
+            const baseY = this.canvas.height - 130 - elevationOffset * 0.8 - cameraOffset;
+            ctx.fillRect(mountain.x, baseY, mountain.width, 30);
+            ctx.fillRect(mountain.x + 30, baseY - 5, Math.min(mountain.width - 30, 90), 35);
+            // Add prominent peaks
+            ctx.fillRect(mountain.x + 50, baseY - 15, Math.min(mountain.width - 50, 70), 45);
+            ctx.fillRect(mountain.x + 90, baseY - 20, Math.min(mountain.width - 90, 60), 50);
+        });
+        
+        // Reset alpha for other elements
+        ctx.globalAlpha = 1.0;
+    }
+    
     setupEventListeners() {
         const startButton = document.getElementById('startButton');
         const pauseButton = document.getElementById('pauseButton');
@@ -225,7 +380,18 @@ class RockClimbingGame {
         this.weatherClouds = [];
         this.rainDrops = [];
         this.lightning.active = false;
+        
+        // Reset mountains
+        this.mountainLayers = {
+            farthest: [],
+            far: [],
+            near: [],
+            nearest: []
+        };
+        this.mountainSpawnTimer = 0;
+        
         this.init();
+        this.initMountains();
     }
     
     jump() {
@@ -416,6 +582,9 @@ class RockClimbingGame {
         // Update camera to follow player elevation
         this.updateCamera();
         
+        // Update mountains (parallax scrolling)
+        this.updateMountains();
+        
         // Update player physics
         this.player.velocityY += this.gravity;
         this.player.y += this.player.velocityY;
@@ -603,15 +772,8 @@ class RockClimbingGame {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw mountain background layers (adjusted for gradual elevation and camera)
-        ctx.fillStyle = '#000000';
-        const elevationOffset = Math.min(this.totalDistance * this.inclineRate * 0.3, this.maxInclination * 0.3);
-        const cameraOffset = this.camera.y * 0.2; // Parallax effect for background
-        
-        // Far mountains (move with elevation for depth effect)
-        ctx.fillRect(0, this.canvas.height - 120 - elevationOffset - cameraOffset, this.canvas.width, 20);
-        ctx.fillRect(100, this.canvas.height - 140 - elevationOffset * 1.2 - cameraOffset, 200, 40);
-        ctx.fillRect(400, this.canvas.height - 130 - elevationOffset * 0.8 - cameraOffset, 300, 30);
+        // Draw dynamic parallax scrolling mountains
+        this.drawMountains(ctx);
         
         // Draw mountain clouds
         this.clouds.forEach(cloud => {
