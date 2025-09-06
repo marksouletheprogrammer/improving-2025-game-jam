@@ -125,35 +125,31 @@ class TRexRunner {
         const gameMessage = document.getElementById('gameMessage');
         const scoreValue = document.getElementById('scoreValue');
         
-        scoreValue.textContent = Math.floor(this.score);
+        scoreValue.textContent = Math.floor(this.score).toString().padStart(5, '0');
         
         switch (this.gameState) {
             case 'start':
                 startButton.style.display = 'block';
                 pauseButton.style.display = 'none';
                 restartButton.style.display = 'none';
-                gameMessage.textContent = 'Press START or SPACEBAR to begin!';
                 break;
             case 'playing':
                 startButton.style.display = 'none';
                 pauseButton.style.display = 'block';
                 restartButton.style.display = 'none';
-                gameMessage.textContent = 'Jump with SPACEBAR! Press P to pause.';
                 break;
             case 'paused':
-                pauseButton.textContent = 'Resume';
-                gameMessage.textContent = 'Game Paused - Click Resume or press P to continue';
+                pauseButton.textContent = 'RESUME';
                 break;
             case 'gameOver':
                 startButton.style.display = 'none';
                 pauseButton.style.display = 'none';
                 restartButton.style.display = 'block';
-                gameMessage.textContent = `Game Over! Final Score: ${Math.floor(this.score)}`;
                 break;
         }
         
         if (this.gameState === 'playing') {
-            pauseButton.textContent = 'Pause';
+            pauseButton.textContent = 'PAUSE';
         }
     }
     
@@ -246,88 +242,98 @@ class TRexRunner {
     render() {
         const ctx = this.ctx;
         
-        // Clear canvas with sky gradient
-        const gradient = ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        gradient.addColorStop(0, '#87CEEB');
-        gradient.addColorStop(1, '#E0F6FF');
-        ctx.fillStyle = gradient;
+        // Clear canvas with white background
+        ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw clouds
-        ctx.fillStyle = '#FFFFFF';
+        // Draw pixelated clouds
+        ctx.fillStyle = '#000000';
         this.clouds.forEach(cloud => {
-            ctx.beginPath();
-            ctx.arc(cloud.x, cloud.y, cloud.width / 4, 0, Math.PI * 2);
-            ctx.arc(cloud.x + cloud.width / 3, cloud.y, cloud.width / 3, 0, Math.PI * 2);
-            ctx.arc(cloud.x + cloud.width / 1.5, cloud.y, cloud.width / 4, 0, Math.PI * 2);
-            ctx.fill();
+            // Simple pixelated cloud shape
+            const cloudX = Math.floor(cloud.x / 4) * 4;
+            const cloudY = Math.floor(cloud.y / 4) * 4;
+            
+            // Cloud body (pixelated rectangles)
+            ctx.fillRect(cloudX, cloudY, 32, 8);
+            ctx.fillRect(cloudX + 8, cloudY - 4, 16, 4);
+            ctx.fillRect(cloudX + 4, cloudY + 8, 24, 4);
         });
         
-        // Draw ground
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(0, this.groundY, this.canvas.width, this.canvas.height - this.groundY);
+        // Draw ground line
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, this.groundY);
+        ctx.lineTo(this.canvas.width, this.groundY);
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset dash pattern
         
-        // Draw ground pattern
-        ctx.fillStyle = '#654321';
-        for (let x = this.groundOffset; x < this.canvas.width; x += 50) {
-            ctx.fillRect(x, this.groundY, 25, 10);
-        }
+        // Draw player (T-Rex) - pixelated monochrome style
+        ctx.fillStyle = '#000000';
+        const px = Math.floor(this.player.x / 2) * 2;
+        const py = Math.floor(this.player.y / 2) * 2;
         
-        // Draw player (T-Rex)
-        ctx.fillStyle = '#228B22';
-        ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
-        
-        // T-Rex details
-        ctx.fillStyle = '#006400';
-        // Head
-        ctx.fillRect(this.player.x + 25, this.player.y, 15, 20);
-        // Legs
+        // T-Rex body (pixelated)
+        ctx.fillRect(px, py + 20, 32, 24);
+        // T-Rex head
+        ctx.fillRect(px + 28, py + 8, 16, 20);
+        // T-Rex tail
+        ctx.fillRect(px - 8, py + 24, 12, 8);
+        // T-Rex legs (only when grounded)
         if (this.player.grounded) {
-            ctx.fillRect(this.player.x + 5, this.player.y + 40, 8, 10);
-            ctx.fillRect(this.player.x + 25, this.player.y + 40, 8, 10);
+            ctx.fillRect(px + 8, py + 44, 6, 8);
+            ctx.fillRect(px + 20, py + 44, 6, 8);
         }
+        // T-Rex arm
+        ctx.fillRect(px + 4, py + 28, 8, 4);
         // Eye
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(this.player.x + 32, this.player.y + 5, 4, 4);
+        ctx.fillRect(px + 36, py + 12, 4, 4);
         ctx.fillStyle = '#000000';
-        ctx.fillRect(this.player.x + 33, this.player.y + 6, 2, 2);
+        ctx.fillRect(px + 38, py + 14, 2, 2);
         
-        // Draw obstacles (cacti)
-        ctx.fillStyle = '#228B22';
+        // Draw obstacles (cacti) - pixelated monochrome style
+        ctx.fillStyle = '#000000';
         this.obstacles.forEach(obstacle => {
-            // Main cactus body
-            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            // Cactus arms
-            ctx.fillRect(obstacle.x - 5, obstacle.y + 10, 8, 15);
-            ctx.fillRect(obstacle.x + obstacle.width - 3, obstacle.y + 15, 8, 12);
+            const ox = Math.floor(obstacle.x / 2) * 2;
+            const oy = Math.floor(obstacle.y / 2) * 2;
+            
+            // Main cactus body (pixelated)
+            ctx.fillRect(ox + 4, oy, 12, 40);
+            // Cactus arms (pixelated)
+            ctx.fillRect(ox, oy + 12, 8, 16);
+            ctx.fillRect(ox + 16, oy + 20, 8, 12);
+            // Cactus details
+            ctx.fillRect(ox + 6, oy + 8, 8, 4);
         });
         
         // Draw game state overlays
         if (this.gameState === 'start') {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = '48px Arial';
+            ctx.fillStyle = '#000000';
+            ctx.font = '32px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('T-REX RUNNER', this.canvas.width / 2, this.canvas.height / 2 - 50);
-            ctx.font = '24px Arial';
-            ctx.fillText('Press SPACE or START to begin!', this.canvas.width / 2, this.canvas.height / 2 + 20);
+            ctx.fillText('T-REX RUNNER', this.canvas.width / 2, this.canvas.height / 2 - 30);
+            ctx.font = '16px monospace';
+            ctx.fillText('Press SPACE to start', this.canvas.width / 2, this.canvas.height / 2 + 20);
         } else if (this.gameState === 'paused') {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = '48px Arial';
+            ctx.fillStyle = '#000000';
+            ctx.font = '32px monospace';
             ctx.textAlign = 'center';
             ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
         } else if (this.gameState === 'gameOver') {
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = '48px Arial';
+            ctx.fillStyle = '#000000';
+            ctx.font = '32px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2 - 30);
-            ctx.font = '24px Arial';
-            ctx.fillText(`Score: ${Math.floor(this.score)}`, this.canvas.width / 2, this.canvas.height / 2 + 20);
+            ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2 - 20);
+            ctx.font = '16px monospace';
+            ctx.fillText(`HI ${Math.floor(this.score).toString().padStart(5, '0')}`, this.canvas.width / 2, this.canvas.height / 2 + 20);
         }
         
         ctx.textAlign = 'left'; // Reset text alignment

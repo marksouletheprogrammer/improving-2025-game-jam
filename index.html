@@ -8,32 +8,20 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>T-Rex Runner</h1>
-            <p>Press SPACE to jump over obstacles!</p>
-        </header>
-        
         <main class="game-area">
             <canvas id="gameCanvas" width="800" height="400"></canvas>
             <div class="game-ui">
                 <div class="score-display">
-                    <span class="score-label">Score:</span>
-                    <span id="scoreValue">0</span>
+                    <span class="score-label">HI</span>
+                    <span id="scoreValue">00000</span>
                 </div>
                 <div class="game-controls">
-                    <button id="startButton" class="game-button">Start Game</button>
-                    <button id="pauseButton" class="game-button" style="display: none;">Pause</button>
-                    <button id="restartButton" class="game-button" style="display: none;">Restart</button>
+                    <button id="startButton" class="game-button">START</button>
+                    <button id="pauseButton" class="game-button" style="display: none;">PAUSE</button>
+                    <button id="restartButton" class="game-button" style="display: none;">RESTART</button>
                 </div>
             </div>
-            <div class="game-instructions">
-                <p id="gameMessage">Press START or SPACEBAR to begin!</p>
-            </div>
         </main>
-        
-        <footer>
-            <p>Built with HTML5 Canvas, CSS3, and JavaScript</p>
-        </footer>
     </div>
     
     <script src="webgl-utils.js"></script>
