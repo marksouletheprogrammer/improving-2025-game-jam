@@ -1,6 +1,6 @@
-// T-Rex Runner Game
+// Rock Climbing Game
 
-class TRexRunner {
+class RockClimbingGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
@@ -11,7 +11,7 @@ class TRexRunner {
         this.gameSpeed = 4;
         this.groundY = this.canvas.height - 50;
         
-        // Player (T-Rex)
+        // Player (Mountain Goat)
         this.player = {
             x: 100,
             y: this.groundY - 50,
@@ -246,66 +246,78 @@ class TRexRunner {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw pixelated clouds
+        // Draw mountain background layers
         ctx.fillStyle = '#000000';
+        // Far mountains
+        ctx.fillRect(0, this.canvas.height - 120, this.canvas.width, 20);
+        ctx.fillRect(100, this.canvas.height - 140, 200, 40);
+        ctx.fillRect(400, this.canvas.height - 130, 300, 30);
+        
+        // Draw mountain clouds
         this.clouds.forEach(cloud => {
-            // Simple pixelated cloud shape
             const cloudX = Math.floor(cloud.x / 4) * 4;
             const cloudY = Math.floor(cloud.y / 4) * 4;
             
-            // Cloud body (pixelated rectangles)
-            ctx.fillRect(cloudX, cloudY, 32, 8);
-            ctx.fillRect(cloudX + 8, cloudY - 4, 16, 4);
-            ctx.fillRect(cloudX + 4, cloudY + 8, 24, 4);
+            // Mountain-style dramatic clouds (more angular)
+            ctx.fillRect(cloudX, cloudY, 40, 6);
+            ctx.fillRect(cloudX + 6, cloudY - 4, 28, 4);
+            ctx.fillRect(cloudX + 2, cloudY + 6, 36, 6);
+            ctx.fillRect(cloudX + 8, cloudY + 12, 24, 4);
         });
         
-        // Draw ground line
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([8, 4]);
-        ctx.beginPath();
-        ctx.moveTo(0, this.groundY);
-        ctx.lineTo(this.canvas.width, this.groundY);
-        ctx.stroke();
-        ctx.setLineDash([]); // Reset dash pattern
+        // Draw rocky mountain terrain
+        ctx.fillStyle = '#000000';
+        // Rocky ledge pattern
+        for (let x = this.groundOffset; x < this.canvas.width + 50; x += 30) {
+            ctx.fillRect(x, this.groundY, 20, 4);
+            ctx.fillRect(x + 5, this.groundY + 4, 10, 2);
+            ctx.fillRect(x + 2, this.groundY - 2, 16, 2);
+        }
         
-        // Draw player (T-Rex) - pixelated monochrome style
+        // Draw player (Mountain Goat) - pixelated monochrome style
         ctx.fillStyle = '#000000';
         const px = Math.floor(this.player.x / 2) * 2;
         const py = Math.floor(this.player.y / 2) * 2;
         
-        // T-Rex body (pixelated)
-        ctx.fillRect(px, py + 20, 32, 24);
-        // T-Rex head
-        ctx.fillRect(px + 28, py + 8, 16, 20);
-        // T-Rex tail
-        ctx.fillRect(px - 8, py + 24, 12, 8);
-        // T-Rex legs (only when grounded)
+        // Goat body (pixelated)
+        ctx.fillRect(px + 8, py + 20, 24, 16);
+        // Goat head
+        ctx.fillRect(px + 24, py + 12, 12, 12);
+        // Goat horns
+        ctx.fillRect(px + 26, py + 8, 2, 6);
+        ctx.fillRect(px + 32, py + 8, 2, 6);
+        // Goat legs (only when grounded)
         if (this.player.grounded) {
-            ctx.fillRect(px + 8, py + 44, 6, 8);
-            ctx.fillRect(px + 20, py + 44, 6, 8);
+            ctx.fillRect(px + 10, py + 36, 4, 12);
+            ctx.fillRect(px + 16, py + 36, 4, 12);
+            ctx.fillRect(px + 22, py + 36, 4, 12);
+            ctx.fillRect(px + 28, py + 36, 4, 12);
         }
-        // T-Rex arm
-        ctx.fillRect(px + 4, py + 28, 8, 4);
+        // Goat tail
+        ctx.fillRect(px + 4, py + 24, 6, 4);
         // Eye
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(px + 36, py + 12, 4, 4);
+        ctx.fillRect(px + 28, py + 16, 3, 3);
         ctx.fillStyle = '#000000';
-        ctx.fillRect(px + 38, py + 14, 2, 2);
+        ctx.fillRect(px + 29, py + 17, 1, 1);
+        // Beard
+        ctx.fillRect(px + 24, py + 20, 2, 6);
         
-        // Draw obstacles (cacti) - pixelated monochrome style
+        // Draw obstacles (Rock formations) - pixelated monochrome style
         ctx.fillStyle = '#000000';
         this.obstacles.forEach(obstacle => {
             const ox = Math.floor(obstacle.x / 2) * 2;
             const oy = Math.floor(obstacle.y / 2) * 2;
             
-            // Main cactus body (pixelated)
-            ctx.fillRect(ox + 4, oy, 12, 40);
-            // Cactus arms (pixelated)
-            ctx.fillRect(ox, oy + 12, 8, 16);
-            ctx.fillRect(ox + 16, oy + 20, 8, 12);
-            // Cactus details
-            ctx.fillRect(ox + 6, oy + 8, 8, 4);
+            // Main rock formation (pixelated)
+            ctx.fillRect(ox + 2, oy, 16, 40);
+            // Rock jagged edges
+            ctx.fillRect(ox, oy + 8, 4, 24);
+            ctx.fillRect(ox + 18, oy + 12, 6, 20);
+            ctx.fillRect(ox + 4, oy - 4, 12, 8);
+            // Rock texture details
+            ctx.fillRect(ox + 6, oy + 16, 4, 4);
+            ctx.fillRect(ox + 12, oy + 24, 4, 4);
         });
         
         // Draw game state overlays
@@ -315,9 +327,9 @@ class TRexRunner {
             ctx.fillStyle = '#000000';
             ctx.font = '32px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('T-REX RUNNER', this.canvas.width / 2, this.canvas.height / 2 - 30);
+            ctx.fillText('ROCK CLIMBING', this.canvas.width / 2, this.canvas.height / 2 - 30);
             ctx.font = '16px monospace';
-            ctx.fillText('Press SPACE to start', this.canvas.width / 2, this.canvas.height / 2 + 20);
+            ctx.fillText('Press SPACE to climb', this.canvas.width / 2, this.canvas.height / 2 + 20);
         } else if (this.gameState === 'paused') {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -348,5 +360,5 @@ class TRexRunner {
 
 // Initialize game when page loads
 window.addEventListener('load', () => {
-    new TRexRunner();
+    new RockClimbingGame();
 });
