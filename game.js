@@ -13,6 +13,12 @@ class RockClimbingGame {
         this.currentTerrainLevel = 0; // Track current terrain level
         this.obstaclesCleared = 0; // Count cleared obstacles for terrain elevation
         
+        // Gradual inclination system
+        this.totalDistance = 0; // Total horizontal distance traveled
+        this.inclineStartDistance = 500; // Distance before inclination starts
+        this.inclineRate = 0.002; // Elevation increase per pixel (gentle slope)
+        this.maxInclination = 200; // Maximum elevation increase
+        
         // Player (Mountain Goat)
         this.player = {
             x: 100,
@@ -71,9 +77,27 @@ class RockClimbingGame {
         this.gameLoop();
     }
     
-    // Get current ground Y position based on terrain level
-    getCurrentGroundY() {
-        return this.baseGroundY - (this.currentTerrainLevel * 10);
+    // Get current ground Y position with gradual inclination
+    getCurrentGroundY(xPosition = 0) {
+        // Calculate base elevation from gradual inclination
+        let elevation = 0;
+        
+        if (this.totalDistance > this.inclineStartDistance) {
+            const inclineDistance = this.totalDistance - this.inclineStartDistance;
+            elevation = Math.min(inclineDistance * this.inclineRate, this.maxInclination);
+        }
+        
+        // Add any additional elevation from specific x position (for slopes)
+        const localElevation = Math.max(0, (xPosition - this.inclineStartDistance) * this.inclineRate);
+        const totalElevation = Math.min(elevation + localElevation, this.maxInclination);
+        
+        return this.baseGroundY - totalElevation;
+    }
+    
+    // Get ground Y at a specific screen position (for collision detection)
+    getGroundYAtPosition(screenX) {
+        const worldX = this.totalDistance + screenX;
+        return this.getCurrentGroundY(worldX);
     }
     
     init() {
@@ -161,6 +185,7 @@ class RockClimbingGame {
         this.leafCollected = 0;
         this.currentTerrainLevel = 0;
         this.obstaclesCleared = 0;
+        this.totalDistance = 0; // Reset distance tracking
         this.player.y = this.baseGroundY - 50;
         this.player.targetY = this.baseGroundY - 50;
         this.player.velocityY = 0;
@@ -365,16 +390,17 @@ class RockClimbingGame {
         this.player.velocityY += this.gravity;
         this.player.y += this.player.velocityY;
         
-        // Ground collision with current terrain level
-        const currentGroundY = this.getTransitionGroundY();
-        if (this.player.y >= currentGroundY - this.player.height) {
-            this.player.y = currentGroundY - this.player.height;
+        // Ground collision with inclined terrain
+        const playerGroundY = this.getGroundYAtPosition(this.player.x);
+        if (this.player.y >= playerGroundY - this.player.height) {
+            this.player.y = playerGroundY - this.player.height;
             this.player.velocityY = 0;
             this.player.jumping = false;
             this.player.grounded = true;
         }
         
-        // Update ground scrolling
+        // Update total distance traveled and ground scrolling
+        this.totalDistance += this.gameSpeed;
         this.groundOffset -= this.gameSpeed;
         if (this.groundOffset <= -50) {
             this.groundOffset = 0;
@@ -400,7 +426,7 @@ class RockClimbingGame {
             
             let obstacle = {
                 x: this.canvas.width,
-                y: this.getCurrentGroundY(),
+                y: this.getGroundYAtPosition(this.canvas.width),
                 passed: false,
                 terrainLevel: this.currentTerrainLevel,
                 type: obstacleType
@@ -547,14 +573,14 @@ class RockClimbingGame {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw mountain background layers (adjusted for terrain level)
+        // Draw mountain background layers (adjusted for gradual elevation)
         ctx.fillStyle = '#000000';
-        const terrainOffset = this.currentTerrainLevel * 10;
+        const elevationOffset = Math.min(this.totalDistance * this.inclineRate * 0.3, this.maxInclination * 0.3);
         
-        // Far mountains (move with terrain for depth effect)
-        ctx.fillRect(0, this.canvas.height - 120 - terrainOffset, this.canvas.width, 20);
-        ctx.fillRect(100, this.canvas.height - 140 - terrainOffset, 200, 40);
-        ctx.fillRect(400, this.canvas.height - 130 - terrainOffset, 300, 30);
+        // Far mountains (move with elevation for depth effect)
+        ctx.fillRect(0, this.canvas.height - 120 - elevationOffset, this.canvas.width, 20);
+        ctx.fillRect(100, this.canvas.height - 140 - elevationOffset * 1.2, 200, 40);
+        ctx.fillRect(400, this.canvas.height - 130 - elevationOffset * 0.8, 300, 30);
         
         // Draw mountain clouds
         this.clouds.forEach(cloud => {
@@ -600,44 +626,38 @@ class RockClimbingGame {
             }
         });
         
-        // Draw terrain levels with smooth transition
+        // Draw inclined terrain
         ctx.fillStyle = '#000000';
-        const currentGroundY = this.getTransitionGroundY();
         
-        // Draw current terrain level
-        for (let x = this.groundOffset; x < this.canvas.width + 50; x += 30) {
-            ctx.fillRect(x, currentGroundY, 20, 4);
-            ctx.fillRect(x + 5, currentGroundY + 4, 10, 2);
-            ctx.fillRect(x + 2, currentGroundY - 2, 16, 2);
-        }
-        
-        // Draw previous terrain level if transitioning
-        if (this.terrainTransition.active && this.currentTerrainLevel > 0) {
-            const previousGroundY = this.baseGroundY - ((this.currentTerrainLevel - 1) * 10);
+        // Draw ground segments that follow the incline
+        const segmentWidth = 20;
+        for (let x = this.groundOffset; x < this.canvas.width + 50; x += segmentWidth) {
+            const groundY1 = this.getGroundYAtPosition(x);
+            const groundY2 = this.getGroundYAtPosition(x + segmentWidth);
             
-            // Calculate how much of the previous terrain to show based on transition progress
-            const progress = this.terrainTransition.progress / this.terrainTransition.duration;
-            const visibleWidth = this.canvas.width * (1 - progress);
+            // Draw main ground segment
+            ctx.fillRect(x, groundY1, segmentWidth, 4);
             
-            // Only draw the part of the previous terrain that's still visible
-            for (let x = this.groundOffset; x < visibleWidth; x += 30) {
-                if (x >= 0) {
-                    ctx.fillRect(x, previousGroundY, 20, 4);
-                    ctx.fillRect(x + 5, previousGroundY + 4, 10, 2);
-                    ctx.fillRect(x + 2, previousGroundY - 2, 16, 2);
+            // Draw connecting slope if there's elevation change
+            if (Math.abs(groundY2 - groundY1) > 0.5) {
+                const steps = Math.ceil(Math.abs(groundY2 - groundY1));
+                for (let i = 0; i < steps; i++) {
+                    const stepX = x + (segmentWidth * i / steps);
+                    const stepY = groundY1 + ((groundY2 - groundY1) * i / steps);
+                    ctx.fillRect(stepX, stepY, 2, 2);
                 }
             }
             
-            // Draw transition cliff at the edge
-            const cliffX = visibleWidth;
-            const cliffHeight = 10; // Height difference between levels
-            ctx.fillRect(cliffX, previousGroundY - cliffHeight, 4, cliffHeight);
+            // Add ground texture details
+            ctx.fillRect(x + 5, groundY1 + 4, 10, 2);
+            ctx.fillRect(x + 2, groundY1 - 2, 16, 2);
         }
         
         // Add rocky texture details on visible terrain
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += 45) {
-            ctx.fillRect(x + 10, currentGroundY - 6, 8, 6);
-            ctx.fillRect(x + 25, currentGroundY - 4, 6, 4);
+            const groundY = this.getGroundYAtPosition(x);
+            ctx.fillRect(x + 10, groundY - 6, 8, 6);
+            ctx.fillRect(x + 25, groundY - 4, 6, 4);
         }
         
         // Draw leaves
