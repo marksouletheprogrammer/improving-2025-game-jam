@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Counter Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WebGL Counter Game</h1>
+            <p>Click the button to increase your score!</p>
+        </header>
+        
+        <main class="game-area">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <div class="game-ui">
+                <div class="score-display">
+                    <span class="score-label">Score:</span>
+                    <span id="scoreValue">0</span>
+                </div>
+                <button id="counterButton" class="game-button">Click Me!</button>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Built with HTML5, WebGL, CSS3, and JavaScript</p>
+        </footer>
+    </div>
+    
+    <script src="webgl-utils.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
