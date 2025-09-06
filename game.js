@@ -65,8 +65,6 @@ class RockClimbingGame {
             duration: 60 // frames for smooth transition
         };
         
-        // Terrain transition point (where new terrain begins)
-        this.terrainTransitionX = this.canvas.width * 0.7; // 70% across the screen
         
         this.init();
         this.setupEventListeners();
