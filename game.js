@@ -192,16 +192,43 @@ class RockClimbingGame {
             x: x,
             width: Math.random() * 120 + 80,
             height: config.baseHeight + Math.random() * config.heightVariation,
-            peaks: [] // Store peak data for varied mountain shapes
+            triangles: [] // Store triangle data with fixed dimensions
         };
         
-        // Generate mountain peaks for more natural look
-        const peakCount = Math.floor(Math.random() * 3) + 2; // 2-4 peaks per mountain
+        // Generate variable number of triangles (1-4 peaks per mountain)
+        const peakCount = Math.floor(Math.random() * 4) + 2; // 2-4 peaks
+        mountain.triangles = [];
+        
         for (let i = 0; i < peakCount; i++) {
-            mountain.peaks.push({
-                x: (mountain.width / peakCount) * i + Math.random() * (mountain.width / peakCount),
-                height: Math.random() * (config.heightVariation * 0.5) + config.baseHeight * 0.5
-            });
+            const spacing = mountain.width / peakCount;
+            const offsetX = i * spacing + Math.random() * (spacing * 0.3);
+            const peakWidth = (40 + Math.random() * 80);
+            
+            let baseHeight, heightVariation;
+            if (layerName === 'farthest') {
+                baseHeight = 8;
+                heightVariation = 50;
+            } else if (layerName === 'far') {
+                baseHeight = 15;
+                heightVariation = 40;
+            } else if (layerName === 'near') {
+                baseHeight = 20;
+                heightVariation = 30;
+            } else if (layerName === 'nearest') {
+                baseHeight = 25;
+                heightVariation = 20;
+            }
+            
+            const peakHeight = baseHeight + Math.random() * heightVariation;
+            
+            // Only add triangle if it fits within mountain bounds
+            if (offsetX + peakWidth <= mountain.width) {
+                mountain.triangles.push({
+                    offsetX: offsetX,
+                    width: peakWidth,
+                    height: peakHeight
+                });
+            }
         }
         
         this.mountainLayers[layerName].push(mountain);
@@ -253,7 +280,7 @@ class RockClimbingGame {
         }
     }
     
-    // Draw all mountain layers with parallax effect (original style but scrolling)
+    // Draw all mountain layers with parallax effect (triangular mountains)
     drawMountains(ctx) {
         const elevationOffset = Math.min(this.totalDistance * this.inclineRate * 0.3, this.maxInclination * 0.3);
         const cameraOffset = this.camera.y * 0.2; // Parallax effect for background
@@ -261,47 +288,60 @@ class RockClimbingGame {
         // Unified base Y for all mountain layers
         const unifiedBaseY = this.canvas.height - 120 - elevationOffset - cameraOffset;
         
-        // Recreate original static mountain rectangles but make them scroll
-        // Farthest mountains - very light and translucent with varied heights
+        // Helper function to draw triangular mountain with minimum width
+        const drawTriangle = (x, baseY, width, height) => {
+            const minWidth = 40; 
+            const actualWidth = Math.max(width, minWidth);
+            ctx.beginPath();
+            ctx.moveTo(x, baseY); // Bottom left
+            ctx.lineTo(x + actualWidth / 2, baseY - height); // Peak
+            ctx.lineTo(x + actualWidth, baseY); // Bottom right
+            ctx.closePath();
+            ctx.fill();
+        };
+        
+        // Farthest mountains - very light and translucent triangular peaks
         ctx.globalAlpha = 0.3;
         ctx.fillStyle = '#A0A0A0';
         this.mountainLayers.farthest.forEach(mountain => {
-            ctx.fillRect(mountain.x, unifiedBaseY - 15, mountain.width, 15);
-            ctx.fillRect(mountain.x + 50, unifiedBaseY - 20, Math.min(mountain.width - 50, 150), 20);
-            ctx.fillRect(mountain.x + 100, unifiedBaseY - 12, Math.min(mountain.width - 100, 100), 12);
+            mountain.triangles.forEach(triangle => {
+                if (mountain.x + triangle.offsetX + triangle.width > 0 && mountain.x + triangle.offsetX < this.canvas.width) {
+                    drawTriangle(mountain.x + triangle.offsetX, unifiedBaseY - 9, triangle.width, triangle.height);
+                }
+            });
         });
         
-        // Far mountains - light gray, moderately translucent with mountain peaks
+        // Far mountains - light gray triangular peaks with variety
         ctx.globalAlpha = 0.5;
         ctx.fillStyle = '#808080';
         this.mountainLayers.far.forEach(mountain => {
-            ctx.fillRect(mountain.x, unifiedBaseY - 18, mountain.width, 18);
-            ctx.fillRect(mountain.x + 30, unifiedBaseY - 25, Math.min(mountain.width - 30, 120), 25);
-            // Add mountain peaks for variety
-            ctx.fillRect(mountain.x + 60, unifiedBaseY - 35, Math.min(mountain.width - 60, 80), 35);
-            ctx.fillRect(mountain.x + 120, unifiedBaseY - 30, Math.min(mountain.width - 120, 60), 30);
+            mountain.triangles.forEach(triangle => {
+                if (mountain.x + triangle.offsetX + triangle.width > 0 && mountain.x + triangle.offsetX < this.canvas.width) {
+                    drawTriangle(mountain.x + triangle.offsetX, unifiedBaseY - 6, triangle.width, triangle.height);
+                }
+            });
         });
         
-        // Near mountains - medium gray, slightly translucent with more detail
+        // Near mountains - medium gray triangular peaks with more detail
         ctx.globalAlpha = 0.7;
         ctx.fillStyle = '#606060';
         this.mountainLayers.near.forEach(mountain => {
-            ctx.fillRect(mountain.x, unifiedBaseY - 20, mountain.width, 20);
-            ctx.fillRect(mountain.x + 20, unifiedBaseY - 40, Math.min(mountain.width - 20, 100), 40);
-            // Add ridges and valleys
-            ctx.fillRect(mountain.x + 40, unifiedBaseY - 50, Math.min(mountain.width - 40, 80), 50);
-            ctx.fillRect(mountain.x + 80, unifiedBaseY - 35, Math.min(mountain.width - 80, 70), 35);
+            mountain.triangles.forEach(triangle => {
+                if (mountain.x + triangle.offsetX + triangle.width > 0 && mountain.x + triangle.offsetX < this.canvas.width) {
+                    drawTriangle(mountain.x + triangle.offsetX, unifiedBaseY - 3, triangle.width, triangle.height);
+                }
+            });
         });
         
-        // Nearest mountains - dark gray, mostly opaque with prominent features
+        // Nearest mountains - dark gray prominent triangular peaks
         ctx.globalAlpha = 0.85;
         ctx.fillStyle = '#404040';
         this.mountainLayers.nearest.forEach(mountain => {
-            ctx.fillRect(mountain.x, unifiedBaseY - 30, mountain.width, 30);
-            ctx.fillRect(mountain.x + 30, unifiedBaseY - 35, Math.min(mountain.width - 30, 90), 35);
-            // Add prominent peaks
-            ctx.fillRect(mountain.x + 50, unifiedBaseY - 45, Math.min(mountain.width - 50, 70), 45);
-            ctx.fillRect(mountain.x + 90, unifiedBaseY - 50, Math.min(mountain.width - 90, 60), 50);
+            mountain.triangles.forEach(triangle => {
+                if (mountain.x + triangle.offsetX + triangle.width > 0 && mountain.x + triangle.offsetX < this.canvas.width) {
+                    drawTriangle(mountain.x + triangle.offsetX, unifiedBaseY, triangle.width, triangle.height);
+                }
+            });
         });
         
         // Reset alpha for other elements
