@@ -1,0 +1,11 @@
+# Windsurf Rules
+
+# Project Basics
+
+- This is an HTML5, WebGL, JavaScript, and CSS3 game. No other frameworks should be used.
+- This game is always launched by opening the index.html file in a web browser.
+
+# Forbidden
+
+- Never edit the README.md
+- Never add any unnecessary footers or headers to the game. 
