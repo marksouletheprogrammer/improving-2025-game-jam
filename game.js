@@ -13,6 +13,20 @@ class RockClimbingGame {
         this.currentTerrainLevel = 0; // Track current terrain level
         this.obstaclesCleared = 0; // Count cleared obstacles for terrain elevation
         
+        // Gradual inclination system
+        this.totalDistance = 0; // Total horizontal distance traveled
+        this.inclineStartDistance = 500; // Distance before inclination starts
+        this.inclineRate = 0.002; // Elevation increase per pixel (gentle slope)
+        this.maxInclination = 200; // Maximum elevation increase
+        
+        // Camera system
+        this.camera = {
+            y: 0, // Current camera Y offset
+            targetY: 0, // Target camera Y position
+            smoothing: 0.1, // Camera smoothing factor (0.1 = smooth, 1.0 = instant)
+            threshold: this.canvas.height * 0.5 // Trigger camera movement when player above 50% height
+        };
+        
         // Player (Mountain Goat)
         this.player = {
             x: 100,
@@ -45,6 +59,16 @@ class RockClimbingGame {
         this.clouds = [];
         this.groundOffset = 0;
         
+        // Mountain system for parallax scrolling
+        this.mountainLayers = {
+            farthest: [], // 20% speed
+            far: [],      // 40% speed
+            near: [],     // 60% speed
+            nearest: []   // 80% speed
+        };
+        this.mountainSpawnTimer = 0;
+        this.mountainSpawnInterval = 300; // Spawn mountains every 300 pixels
+        
         // Weather system
         this.weatherClouds = [];
         this.rainDrops = [];
@@ -65,17 +89,51 @@ class RockClimbingGame {
             duration: 60 // frames for smooth transition
         };
         
-        // Terrain transition point (where new terrain begins)
-        this.terrainTransitionX = this.canvas.width * 0.7; // 70% across the screen
         
         this.init();
+        this.initMountains();
         this.setupEventListeners();
         this.gameLoop();
     }
     
-    // Get current ground Y position based on terrain level
-    getCurrentGroundY() {
-        return this.baseGroundY - (this.currentTerrainLevel * 10);
+    // Get current ground Y position with gradual inclination
+    getCurrentGroundY(xPosition = 0) {
+        // Calculate base elevation from gradual inclination
+        let elevation = 0;
+        
+        if (this.totalDistance > this.inclineStartDistance) {
+            const inclineDistance = this.totalDistance - this.inclineStartDistance;
+            elevation = Math.min(inclineDistance * this.inclineRate, this.maxInclination);
+        }
+        
+        // Add any additional elevation from specific x position (for slopes)
+        const localElevation = Math.max(0, (xPosition - this.inclineStartDistance) * this.inclineRate);
+        const totalElevation = Math.min(elevation + localElevation, this.maxInclination);
+        
+        return this.baseGroundY - totalElevation;
+    }
+    
+    // Get ground Y at a specific screen position (for collision detection)
+    getGroundYAtPosition(screenX) {
+        const worldX = this.totalDistance + screenX;
+        return this.getCurrentGroundY(worldX);
+    }
+    
+    // Update camera to keep player in lower portion of screen
+    updateCamera() {
+        // Calculate player's screen position (world position - camera offset)
+        const playerScreenY = this.player.y - this.camera.y;
+        
+        // If player is above the threshold (50% of screen height), move camera up
+        if (playerScreenY < this.camera.threshold) {
+            // Calculate how much to move camera up to keep player at threshold
+            const targetOffset = this.player.y - this.camera.threshold;
+            this.camera.targetY = Math.max(0, targetOffset); // Don't go below 0
+        }
+        
+        // Smooth camera movement
+        const diff = this.camera.targetY - this.camera.y;
+        this.camera.y += diff * this.camera.smoothing;
     }
     
     init() {
@@ -105,6 +163,189 @@ class RockClimbingGame {
         }
         
         this.updateUI();
+    }
+    
+    // Initialize mountain layers with initial mountains
+    initMountains() {
+        const layerConfigs = {
+            farthest: { alpha: 0.3, color: '#A0A0A0', baseHeight: 15, heightVariation: 10, speed: 0.03 },
+            far: { alpha: 0.5, color: '#808080', baseHeight: 25, heightVariation: 15, speed: 0.06 },
+            near: { alpha: 0.7, color: '#606060', baseHeight: 35, heightVariation: 20, speed: 0.09 },
+            nearest: { alpha: 0.85, color: '#404040', baseHeight: 45, heightVariation: 25, speed: 0.12 }
+        };
+        
+        // Initialize each layer with mountains to fill the screen
+        Object.keys(layerConfigs).forEach(layerName => {
+            const config = layerConfigs[layerName];
+            let currentX = -200; // Start off-screen to the left
+            
+            while (currentX < this.canvas.width + 400) {
+                this.spawnMountain(layerName, currentX, config);
+                currentX += Math.random() * 150 + 130; // Further increased spacing between mountains
+            }
+        });
+    }
+    
+    // Spawn a single mountain in the specified layer
+    spawnMountain(layerName, x, config) {
+        const mountain = {
+            x: x,
+            width: Math.random() * 120 + 80,
+            height: config.baseHeight + Math.random() * config.heightVariation,
+            triangles: [] // Store triangle data with fixed dimensions
+        };
+        
+        // Generate variable number of triangles (1-4 peaks per mountain)
+        const peakCount = Math.floor(Math.random() * 4) + 2; // 2-4 peaks
+        mountain.triangles = [];
+        
+        for (let i = 0; i < peakCount; i++) {
+            const spacing = mountain.width / peakCount;
+            const offsetX = i * spacing + Math.random() * (spacing * 0.3);
+            const peakWidth = (40 + Math.random() * 80);
+            
+            let baseHeight, heightVariation;
+            if (layerName === 'farthest') {
+                baseHeight = 8;
+                heightVariation = 50;
+            } else if (layerName === 'far') {
+                baseHeight = 15;
+                heightVariation = 40;
+            } else if (layerName === 'near') {
+                baseHeight = 20;
+                heightVariation = 30;
+            } else if (layerName === 'nearest') {
+                baseHeight = 25;
+                heightVariation = 20;
+            }
+            
+            const peakHeight = baseHeight + Math.random() * heightVariation;
+            
+            // Only add triangle if it fits within mountain bounds
+            if (offsetX + peakWidth <= mountain.width) {
+                mountain.triangles.push({
+                    offsetX: offsetX,
+                    width: peakWidth,
+                    height: peakHeight
+                });
+            }
+        }
+        
+        this.mountainLayers[layerName].push(mountain);
+    }
+    
+    // Update mountain system - handle scrolling, spawning, and despawning
+    updateMountains() {
+        const layerConfigs = {
+            farthest: { alpha: 0.3, color: '#A0A0A0', baseHeight: 15, heightVariation: 10, speed: 0.03 },
+            far: { alpha: 0.5, color: '#808080', baseHeight: 25, heightVariation: 15, speed: 0.06 },
+            near: { alpha: 0.7, color: '#606060', baseHeight: 35, heightVariation: 20, speed: 0.09 },
+            nearest: { alpha: 0.85, color: '#404040', baseHeight: 45, heightVariation: 25, speed: 0.12 }
+        };
+        
+        // Update mountain spawn timer
+        this.mountainSpawnTimer += this.gameSpeed;
+        
+        Object.keys(this.mountainLayers).forEach(layerName => {
+            const config = layerConfigs[layerName];
+            const mountains = this.mountainLayers[layerName];
+            
+            // Move mountains based on their layer speed
+            mountains.forEach(mountain => {
+                mountain.x -= this.gameSpeed * config.speed;
+            });
+            
+            // Remove mountains that have moved completely off-screen to the left
+            this.mountainLayers[layerName] = mountains.filter(mountain => 
+                mountain.x + mountain.width > -100
+            );
+            
+            // Spawn new mountains on the right side when needed
+            if (this.mountainSpawnTimer > this.mountainSpawnInterval) {
+                const rightmostMountain = mountains.reduce((rightmost, mountain) => 
+                    mountain.x + mountain.width > rightmost ? mountain.x + mountain.width : rightmost, 0
+                );
+                
+                // If there's a gap on the right side, spawn a new mountain
+                if (rightmostMountain < this.canvas.width + 200) {
+                    const spawnX = Math.max(rightmostMountain + Math.random() * 100 + 80, this.canvas.width + 100);
+                    this.spawnMountain(layerName, spawnX, config);
+                }
+            }
+        });
+        
+        // Reset spawn timer periodically
+        if (this.mountainSpawnTimer > this.mountainSpawnInterval) {
+            this.mountainSpawnTimer = 0;
+        }
+    }
+    
+    // Draw all mountain layers with parallax effect (triangular mountains)
+    drawMountains(ctx) {
+        const elevationOffset = Math.min(this.totalDistance * this.inclineRate * 0.3, this.maxInclination * 0.3);
+        const cameraOffset = this.camera.y * 0.2; // Parallax effect for background
+        
+        // Unified base Y for all mountain layers
+        const unifiedBaseY = this.canvas.height - 120 - elevationOffset - cameraOffset;
+        
+        // Helper function to draw triangular mountain with minimum width
+        const drawTriangle = (x, baseY, width, height) => {
+            const minWidth = 40; 
+            const actualWidth = Math.max(width, minWidth);
+            ctx.beginPath();
+            ctx.moveTo(x, baseY); // Bottom left
+            ctx.lineTo(x + actualWidth / 2, baseY - height); // Peak
+            ctx.lineTo(x + actualWidth, baseY); // Bottom right
+            ctx.closePath();
+            ctx.fill();
+        };
+        
+        // Farthest mountains - very light and translucent triangular peaks
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#A0A0A0';
+        this.mountainLayers.farthest.forEach(mountain => {
+            mountain.triangles.forEach(triangle => {
+                if (mountain.x + triangle.offsetX + triangle.width > 0 && mountain.x + triangle.offsetX < this.canvas.width) {
+                    drawTriangle(mountain.x + triangle.offsetX, unifiedBaseY - 9, triangle.width, triangle.height);
+                }
+            });
+        });
+        
+        // Far mountains - light gray triangular peaks with variety
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = '#808080';
+        this.mountainLayers.far.forEach(mountain => {
+            mountain.triangles.forEach(triangle => {
+                if (mountain.x + triangle.offsetX + triangle.width > 0 && mountain.x + triangle.offsetX < this.canvas.width) {
+                    drawTriangle(mountain.x + triangle.offsetX, unifiedBaseY - 6, triangle.width, triangle.height);
+                }
+            });
+        });
+        
+        // Near mountains - medium gray triangular peaks with more detail
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = '#606060';
+        this.mountainLayers.near.forEach(mountain => {
+            mountain.triangles.forEach(triangle => {
+                if (mountain.x + triangle.offsetX + triangle.width > 0 && mountain.x + triangle.offsetX < this.canvas.width) {
+                    drawTriangle(mountain.x + triangle.offsetX, unifiedBaseY - 3, triangle.width, triangle.height);
+                }
+            });
+        });
+        
+        // Nearest mountains - dark gray prominent triangular peaks
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = '#404040';
+        this.mountainLayers.nearest.forEach(mountain => {
+            mountain.triangles.forEach(triangle => {
+                if (mountain.x + triangle.offsetX + triangle.width > 0 && mountain.x + triangle.offsetX < this.canvas.width) {
+                    drawTriangle(mountain.x + triangle.offsetX, unifiedBaseY, triangle.width, triangle.height);
+                }
+            });
+        });
+        
+        // Reset alpha for other elements
+        ctx.globalAlpha = 1.0;
     }
     
     setupEventListeners() {
@@ -163,6 +404,9 @@ class RockClimbingGame {
         this.leafCollected = 0;
         this.currentTerrainLevel = 0;
         this.obstaclesCleared = 0;
+        this.totalDistance = 0; // Reset distance tracking
+        this.camera.y = 0; // Reset camera position
+        this.camera.targetY = 0;
         this.player.y = this.baseGroundY - 50;
         this.player.targetY = this.baseGroundY - 50;
         this.player.velocityY = 0;
@@ -175,7 +419,18 @@ class RockClimbingGame {
         this.weatherClouds = [];
         this.rainDrops = [];
         this.lightning.active = false;
+        
+        // Reset mountains
+        this.mountainLayers = {
+            farthest: [],
+            far: [],
+            near: [],
+            nearest: []
+        };
+        this.mountainSpawnTimer = 0;
+        
         this.init();
+        this.initMountains();
     }
     
     jump() {
@@ -363,20 +618,27 @@ class RockClimbingGame {
         // Update terrain transition
         this.updateTerrainTransition();
         
+        // Update camera to follow player elevation
+        this.updateCamera();
+        
+        // Update mountains (parallax scrolling)
+        this.updateMountains();
+        
         // Update player physics
         this.player.velocityY += this.gravity;
         this.player.y += this.player.velocityY;
         
-        // Ground collision with current terrain level
-        const currentGroundY = this.getTransitionGroundY();
-        if (this.player.y >= currentGroundY - this.player.height) {
-            this.player.y = currentGroundY - this.player.height;
+        // Ground collision with inclined terrain
+        const playerGroundY = this.getGroundYAtPosition(this.player.x);
+        if (this.player.y >= playerGroundY - this.player.height) {
+            this.player.y = playerGroundY - this.player.height;
             this.player.velocityY = 0;
             this.player.jumping = false;
             this.player.grounded = true;
         }
         
-        // Update ground scrolling
+        // Update total distance traveled and ground scrolling
+        this.totalDistance += this.gameSpeed;
         this.groundOffset -= this.gameSpeed;
         if (this.groundOffset <= -50) {
             this.groundOffset = 0;
@@ -402,7 +664,7 @@ class RockClimbingGame {
             
             let obstacle = {
                 x: this.canvas.width,
-                y: this.getCurrentGroundY(),
+                y: this.getGroundYAtPosition(this.canvas.width),
                 passed: false,
                 terrainLevel: this.currentTerrainLevel,
                 type: obstacleType
@@ -453,7 +715,7 @@ class RockClimbingGame {
             // Create a new leaf
             const leaf = {
                 x: this.canvas.width,
-                y: Math.random() * (this.canvas.height / 2) + 50, // Random height in upper half of screen
+                y: this.canvas.height - 50 - Math.random() * 60 - 60, // Spawn from half jump height to full jump height above ground
                 width: 16,
                 height: 12,
                 collected: false,
@@ -549,19 +811,13 @@ class RockClimbingGame {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw mountain background layers (adjusted for terrain level)
-        ctx.fillStyle = '#000000';
-        const terrainOffset = this.currentTerrainLevel * 10;
-        
-        // Far mountains (move with terrain for depth effect)
-        ctx.fillRect(0, this.canvas.height - 120 - terrainOffset, this.canvas.width, 20);
-        ctx.fillRect(100, this.canvas.height - 140 - terrainOffset, 200, 40);
-        ctx.fillRect(400, this.canvas.height - 130 - terrainOffset, 300, 30);
+        // Draw dynamic parallax scrolling mountains
+        this.drawMountains(ctx);
         
         // Draw mountain clouds
         this.clouds.forEach(cloud => {
             const cloudX = Math.floor(cloud.x / 4) * 4;
-            const cloudY = Math.floor(cloud.y / 4) * 4;
+            const cloudY = Math.floor((cloud.y - this.camera.y * 0.1) / 4) * 4; // Slight parallax for clouds
             
             ctx.fillStyle = '#C0C0C0';
             // Draw cloud shape with rounded appearance
@@ -574,7 +830,7 @@ class RockClimbingGame {
         // Draw weather clouds (storm clouds) with proper cloud shape
         this.weatherClouds.forEach(cloud => {
             const cloudX = Math.floor(cloud.x / 4) * 4;
-            const cloudY = Math.floor(cloud.y / 4) * 4;
+            const cloudY = Math.floor((cloud.y - this.camera.y * 0.15) / 4) * 4; // Parallax for weather clouds
             
             if (cloud.isStorm) {
                 ctx.fillStyle = '#404040';
@@ -602,51 +858,45 @@ class RockClimbingGame {
             }
         });
         
-        // Draw terrain levels with smooth transition
+        // Draw inclined terrain
         ctx.fillStyle = '#000000';
-        const currentGroundY = this.getTransitionGroundY();
         
-        // Draw current terrain level
-        for (let x = this.groundOffset; x < this.canvas.width + 50; x += 30) {
-            ctx.fillRect(x, currentGroundY, 20, 4);
-            ctx.fillRect(x + 5, currentGroundY + 4, 10, 2);
-            ctx.fillRect(x + 2, currentGroundY - 2, 16, 2);
-        }
-        
-        // Draw previous terrain level if transitioning
-        if (this.terrainTransition.active && this.currentTerrainLevel > 0) {
-            const previousGroundY = this.baseGroundY - ((this.currentTerrainLevel - 1) * 10);
+        // Draw ground segments that follow the incline
+        const segmentWidth = 20;
+        for (let x = this.groundOffset; x < this.canvas.width + 50; x += segmentWidth) {
+            const groundY1 = this.getGroundYAtPosition(x) - this.camera.y;
+            const groundY2 = this.getGroundYAtPosition(x + segmentWidth) - this.camera.y;
             
-            // Calculate how much of the previous terrain to show based on transition progress
-            const progress = this.terrainTransition.progress / this.terrainTransition.duration;
-            const visibleWidth = this.canvas.width * (1 - progress);
+            // Draw main ground segment
+            ctx.fillRect(x, groundY1, segmentWidth, 4);
             
-            // Only draw the part of the previous terrain that's still visible
-            for (let x = this.groundOffset; x < visibleWidth; x += 30) {
-                if (x >= 0) {
-                    ctx.fillRect(x, previousGroundY, 20, 4);
-                    ctx.fillRect(x + 5, previousGroundY + 4, 10, 2);
-                    ctx.fillRect(x + 2, previousGroundY - 2, 16, 2);
+            // Draw connecting slope if there's elevation change
+            if (Math.abs(groundY2 - groundY1) > 0.5) {
+                const steps = Math.ceil(Math.abs(groundY2 - groundY1));
+                for (let i = 0; i < steps; i++) {
+                    const stepX = x + (segmentWidth * i / steps);
+                    const stepY = groundY1 + ((groundY2 - groundY1) * i / steps);
+                    ctx.fillRect(stepX, stepY, 2, 2);
                 }
             }
             
-            // Draw transition cliff at the edge
-            const cliffX = visibleWidth;
-            const cliffHeight = 10; // Height difference between levels
-            ctx.fillRect(cliffX, previousGroundY - cliffHeight, 4, cliffHeight);
+            // Add ground texture details
+            ctx.fillRect(x + 5, groundY1 + 4, 10, 2);
+            ctx.fillRect(x + 2, groundY1 - 2, 16, 2);
         }
         
         // Add rocky texture details on visible terrain
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += 45) {
-            ctx.fillRect(x + 10, currentGroundY - 6, 8, 6);
-            ctx.fillRect(x + 25, currentGroundY - 4, 6, 4);
+            const groundY = this.getGroundYAtPosition(x) - this.camera.y;
+            ctx.fillRect(x + 10, groundY - 6, 8, 6);
+            ctx.fillRect(x + 25, groundY - 4, 6, 4);
         }
         
         // Draw leaves
         this.leaves.forEach(leaf => {
             if (!leaf.collected) {
                 const lx = Math.floor(leaf.x / 2) * 2;
-                const ly = Math.floor((leaf.y + Math.sin(leaf.floatOffset) * 5) / 2) * 2; // Floating animation
+                const ly = Math.floor((leaf.y + Math.sin(leaf.floatOffset) * 5 - this.camera.y) / 2) * 2; // Floating animation with camera
                 
                 ctx.fillStyle = '#2E7D32'; // Green color for leaf
                 // Draw leaf shape (pixelated)
@@ -666,7 +916,7 @@ class RockClimbingGame {
         // Draw player (Mountain Goat) - pixelated monochrome style
         ctx.fillStyle = '#000000';
         const px = Math.floor(this.player.x / 2) * 2;
-        const py = Math.floor(this.player.y / 2) * 2;
+        const py = Math.floor((this.player.y - this.camera.y) / 2) * 2;
         
         // Goat body (pixelated)
         ctx.fillRect(px + 8, py + 20, 24, 16);
@@ -703,7 +953,7 @@ class RockClimbingGame {
         ctx.fillStyle = '#000000';
         this.obstacles.forEach(obstacle => {
             const ox = Math.floor(obstacle.x / 2) * 2;
-            const oy = Math.floor(obstacle.y / 2) * 2;
+            const oy = Math.floor((obstacle.y - this.camera.y) / 2) * 2;
             
             // Draw different rock shapes based on obstacle type
             switch(obstacle.type) {
@@ -761,7 +1011,7 @@ class RockClimbingGame {
         // Draw rain drops
         ctx.fillStyle = '#6B9BD1';
         this.rainDrops.forEach(drop => {
-            ctx.fillRect(Math.floor(drop.x), Math.floor(drop.y), 1, 4);
+            ctx.fillRect(Math.floor(drop.x), Math.floor(drop.y - this.camera.y), 1, 4);
         });
         
         // Draw lightning
@@ -771,8 +1021,8 @@ class RockClimbingGame {
             ctx.beginPath();
             
             this.lightning.segments.forEach(segment => {
-                ctx.moveTo(segment.x1, segment.y1);
-                ctx.lineTo(segment.x2, segment.y2);
+                ctx.moveTo(segment.x1, segment.y1 - this.camera.y);
+                ctx.lineTo(segment.x2, segment.y2 - this.camera.y);
             });
             
             ctx.stroke();
@@ -784,8 +1034,8 @@ class RockClimbingGame {
                 ctx.beginPath();
                 
                 this.lightning.segments.forEach(segment => {
-                    ctx.moveTo(segment.x1, segment.y1);
-                    ctx.lineTo(segment.x2, segment.y2);
+                    ctx.moveTo(segment.x1, segment.y1 - this.camera.y);
+                    ctx.lineTo(segment.x2, segment.y2 - this.camera.y);
                 });
                 
                 ctx.stroke();
