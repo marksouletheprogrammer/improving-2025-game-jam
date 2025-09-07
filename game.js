@@ -1,4 +1,4 @@
-﻿class RockClimbingGame {
+class RockClimbingGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
@@ -55,7 +55,9 @@
             state: 'idle', // 'idle', 'airborne'
             targetY: this.baseGroundY - 50, // For smooth terrain transitions
             jumpHeight: 120, // Maximum jump height
-            landingPose: true // Always land on feet
+            landingPose: true, // Always land on feet
+            aimAngle: 0, // Current aim angle from mouse
+            flipState: 'normal' // 'normal', 'frontflip', 'backflip'
         };
         
         // Physics
@@ -103,6 +105,13 @@
         
         // Particle system for landing effects
         this.particles = [];
+        
+        // Mouse control system
+        this.mouse = {
+            x: 0,
+            y: 0,
+            isTracking: false
+        };
         
         // Terrain transition
         this.terrainTransition = {
@@ -453,6 +462,40 @@
                 this.togglePause();
             }
         });
+        
+        // Mouse controls for angle selection
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (this.gameState === 'playing') {
+                const rect = this.canvas.getBoundingClientRect();
+                this.mouse.x = e.clientX - rect.left;
+                this.mouse.y = e.clientY - rect.top;
+                this.updateAimAngle();
+            }
+        });
+        
+        this.canvas.addEventListener('mouseenter', () => {
+            this.mouse.isTracking = true;
+        });
+        
+        this.canvas.addEventListener('mouseleave', () => {
+            this.mouse.isTracking = false;
+        });
+    }
+    
+    // Update aim angle based on mouse position
+    updateAimAngle() {
+        if (this.player.state === 'idle' && this.player.grounded && this.mouse.isTracking) {
+            // Get goat's screen position
+            const goatScreenX = this.player.x - this.camera.x;
+            const goatScreenY = this.player.y - this.camera.y;
+            
+            // Calculate angle from goat to mouse
+            const deltaX = this.mouse.x - goatScreenX;
+            const deltaY = this.mouse.y - goatScreenY;
+            
+            // Calculate angle in radians (atan2 gives -π to π)
+            this.player.aimAngle = Math.atan2(deltaY, deltaX);
+        }
     }
 
     playSound(name) {
@@ -512,6 +555,8 @@
         this.player.jumping = false;
         this.player.grounded = true;
         this.player.state = 'idle';
+        this.player.aimAngle = 0;
+        this.player.flipState = 'normal';
         this.groundOffset = 0;
         this.terrainTransition.active = false;
         
@@ -542,13 +587,26 @@
     
     jump() {
         if (this.player.grounded && this.player.state === 'idle') {
-            // Generate random jump angle and power for realistic goat movement
-            const jumpAngle = (Math.random() * (this.maxJumpAngle - this.minJumpAngle) + this.minJumpAngle) * Math.PI / 180;
+            // Use mouse-selected angle instead of random
+            const jumpAngle = this.player.aimAngle;
             const jumpPower = Math.random() * (this.jumpPowerMax - this.jumpPowerMin) + this.jumpPowerMin;
             
-            // Calculate velocity components based on angle
+            // Calculate velocity components based on mouse angle
             this.player.velocityX = jumpPower * Math.cos(jumpAngle);
-            this.player.velocityY = -jumpPower * Math.sin(jumpAngle); // Negative for upward movement
+            this.player.velocityY = jumpPower * Math.sin(jumpAngle); // Positive Y is downward in canvas
+            
+            // Check for extreme downward angles for flip animation
+            const angleInDegrees = jumpAngle * 180 / Math.PI;
+            if (Math.abs(angleInDegrees) > 135 || (angleInDegrees > 45 && angleInDegrees < 135)) {
+                // Extreme downward angle - determine flip direction
+                if (jumpAngle > 0) {
+                    this.player.flipState = 'frontflip';
+                } else {
+                    this.player.flipState = 'backflip';
+                }
+            } else {
+                this.player.flipState = 'normal';
+            }
             
             // Update player state
             this.player.jumping = true;
@@ -763,6 +821,7 @@
                 this.player.grounded = true;
                 this.player.state = 'idle';
                 this.player.landingPose = true;
+                this.player.flipState = 'normal'; // Reset flip state on landing
                 
                 // Create dirt particles on landing
                 this.createLandingParticles(this.player.x, this.player.y + this.player.height);
@@ -1071,6 +1130,52 @@
             }
         });
         
+        // Draw aim arrow when goat is idle
+        if (this.player.state === 'idle' && this.player.grounded && this.mouse.isTracking) {
+            const goatScreenX = Math.floor((this.player.x - this.camera.x) / 2) * 2;
+            const goatScreenY = Math.floor((this.player.y - this.camera.y) / 2) * 2;
+            
+            // Calculate arrow position floating above/near goat
+            const goatCenterX = goatScreenX + this.player.width / 2;
+            const goatCenterY = goatScreenY + this.player.height / 2;
+            
+            // Offset triangle to float detached from goat
+            const triangleOffset = 25;
+            const triangleCenterX = goatCenterX + Math.cos(this.player.aimAngle) * triangleOffset;
+            const triangleCenterY = goatCenterY + Math.sin(this.player.aimAngle) * triangleOffset;
+            
+            // Set transparency
+            ctx.globalAlpha = 0.7;
+            
+            // Draw triangle pointing in selected direction
+            const triangleSize = 12;
+            
+            // Calculate triangle points
+            const pointX = triangleCenterX + Math.cos(this.player.aimAngle) * triangleSize;
+            const pointY = triangleCenterY + Math.sin(this.player.aimAngle) * triangleSize;
+            
+            const baseAngle1 = this.player.aimAngle + Math.PI * 0.75;
+            const baseAngle2 = this.player.aimAngle - Math.PI * 0.75;
+            
+            const base1X = triangleCenterX + Math.cos(baseAngle1) * (triangleSize * 0.6);
+            const base1Y = triangleCenterY + Math.sin(baseAngle1) * (triangleSize * 0.6);
+            
+            const base2X = triangleCenterX + Math.cos(baseAngle2) * (triangleSize * 0.6);
+            const base2Y = triangleCenterY + Math.sin(baseAngle2) * (triangleSize * 0.6);
+            
+            // Draw filled triangle
+            ctx.fillStyle = '#228B22';
+            ctx.beginPath();
+            ctx.moveTo(pointX, pointY);
+            ctx.lineTo(base1X, base1Y);
+            ctx.lineTo(base2X, base2Y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Reset transparency
+            ctx.globalAlpha = 1.0;
+        }
+        
         // Draw player (Mountain Goat) - pixelated monochrome style
         ctx.fillStyle = '#000000';
         const px = Math.floor((this.player.x - this.camera.x) / 2) * 2;
@@ -1083,7 +1188,7 @@
         // Goat horns
         ctx.fillRect(px + 26, py + 8, 2, 6);
         ctx.fillRect(px + 32, py + 8, 2, 6);
-        // Goat legs - show different poses based on state
+        // Goat legs - show different poses based on state and flip
         if (this.player.state === 'idle' || this.player.landingPose) {
             // Legs when on ground - always land on feet
             ctx.fillRect(px + 10, py + 36, 4, 12);
@@ -1091,11 +1196,26 @@
             ctx.fillRect(px + 22, py + 36, 4, 12);
             ctx.fillRect(px + 28, py + 36, 4, 12);
         } else {
-            // Legs when airborne - bent position for jumping
-            ctx.fillRect(px + 10, py + 30, 4, 8);
-            ctx.fillRect(px + 16, py + 32, 4, 6);
-            ctx.fillRect(px + 22, py + 32, 4, 6);
-            ctx.fillRect(px + 28, py + 30, 4, 8);
+            // Legs when airborne - show flip animation if flipping
+            if (this.player.flipState === 'frontflip') {
+                // Front flip - legs tucked up
+                ctx.fillRect(px + 12, py + 20, 4, 6);
+                ctx.fillRect(px + 18, py + 18, 4, 6);
+                ctx.fillRect(px + 24, py + 18, 4, 6);
+                ctx.fillRect(px + 30, py + 20, 4, 6);
+            } else if (this.player.flipState === 'backflip') {
+                // Back flip - legs extended back
+                ctx.fillRect(px + 6, py + 28, 4, 8);
+                ctx.fillRect(px + 12, py + 26, 4, 8);
+                ctx.fillRect(px + 18, py + 26, 4, 8);
+                ctx.fillRect(px + 24, py + 28, 4, 8);
+            } else {
+                // Normal airborne - bent position for jumping
+                ctx.fillRect(px + 10, py + 30, 4, 8);
+                ctx.fillRect(px + 16, py + 32, 4, 6);
+                ctx.fillRect(px + 22, py + 32, 4, 6);
+                ctx.fillRect(px + 28, py + 30, 4, 8);
+            }
         }
         // Goat tail
         ctx.fillRect(px + 4, py + 24, 6, 4);
