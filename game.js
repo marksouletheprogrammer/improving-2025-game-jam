@@ -2,6 +2,7 @@ class RockClimbingGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.jumpCount = 0; // Track number of jumps made
 
         // Background music
         this.music = new Audio("assets/music.mp3");
@@ -27,7 +28,7 @@ class RockClimbingGame {
         
         // Gradual inclination system
         this.totalDistance = 0; // Total horizontal distance traveled
-        this.inclineStartDistance = 500; // Distance before inclination starts
+        this.inclineStartDistance = 10; // Distance before inclination starts
         this.inclineRate = 0.002; // Elevation increase per pixel (gentle slope)
         this.maxInclination = 200; // Maximum elevation increase
         
@@ -62,17 +63,17 @@ class RockClimbingGame {
         
         // Physics
         this.gravity = 0.8;
-        this.jumpPowerMin = 10; // Minimum jump power
+        this.jumpPowerMin = 5; // Minimum jump power
         this.jumpPowerMax = 15; // Maximum jump power
-        this.minJumpAngle = 45; // Minimum jump angle in degrees (increased for more height)
-        this.maxJumpAngle = 80; // Maximum jump angle in degrees (increased for more height)
+        this.minJumpAngle = 15; // Minimum jump angle in degrees (increased for more height)
+        this.maxJumpAngle = 85; // Maximum jump angle in degrees (increased for more height)
         
         // Power Control System - Configurable timing constants
-        this.POWER_INDICATOR_DELAY = 100; // ms before indicator shows
+        this.POWER_INDICATOR_DELAY = 10; // ms before indicator shows
         this.POWER_LEVEL_1_TIME = 500;   // weak jump
         this.POWER_LEVEL_2_TIME = 1500;   // normal jump
         this.POWER_LEVEL_3_TIME = 2500;   // big jump
-        this.POWER_CYCLE_RESET = 4000;    // cycle back to level 1
+        this.POWER_CYCLE_RESET = 3500;    // cycle back to level 1
         
         // Power state management
         this.powerCharging = false;
@@ -103,7 +104,7 @@ class RockClimbingGame {
             nearest: []   // 80% speed
         };
         this.mountainSpawnTimer = 0;
-        this.mountainSpawnInterval = 300; // Spawn mountains every 300 pixels
+        this.mountainSpawnInterval = 200; // Spawn mountains every 300 pixels
         
         // Weather system
         this.weatherClouds = [];
@@ -446,6 +447,20 @@ class RockClimbingGame {
         
         // Reset alpha for other elements
         ctx.globalAlpha = 1.0;
+        // Draw trajectory prediction when goat is idle and aiming
+if (this.player.state === 'idle' && this.player.grounded && this.mouse.isTracking) {
+    const powerLevel = this.showPowerIndicator ? this.currentPowerLevel : 1;
+    const { velocityX, velocityY } = this.getPredictedJumpVelocity(powerLevel);
+    
+    const trajectoryPoints = this.calculateTrajectory(
+        this.player.x,
+        this.player.y,
+        velocityX,
+        velocityY
+    );
+    
+    this.drawTrajectoryLine(ctx, trajectoryPoints);
+}
     }
     
     setupEventListeners() {
@@ -642,6 +657,8 @@ class RockClimbingGame {
     executeJump() {
         if (this.powerCharging) {
             const holdDuration = Date.now() - this.powerStartTime;
+
+            this.jumpCount++; // Increment jump counter
             
             // Determine power level based on hold duration
             if (holdDuration < this.POWER_INDICATOR_DELAY) {
@@ -674,7 +691,7 @@ class RockClimbingGame {
             // Use mouse-selected angle for directional jump mechanics
             const jumpAngle = this.player.aimAngle;
             // Calculate base power with power level multiplier
-            const basePowerRaw = Math.random() * (this.jumpPowerMax - this.jumpPowerMin) + this.jumpPowerMin;
+            const basePowerRaw = (this.jumpPowerMax + this.jumpPowerMin) / 2;
             let powerMultiplier = 1.0;
             
             // Apply power level scaling
@@ -793,6 +810,130 @@ class RockClimbingGame {
             this.playSound('jump');
         }
     }
+
+    // Add these three methods after your jump() method
+calculateTrajectory(startX, startY, velocityX, velocityY, steps = 50) {
+    const points = [];
+    const gravity = this.gravity;
+    
+    let currentX = startX;
+    let currentY = startY;
+    let currentVelX = velocityX;
+    let currentVelY = velocityY;
+    
+    for (let i = 0; i < steps; i++) {
+        points.push({ x: currentX, y: currentY });
+        
+        currentVelY += gravity;
+        currentX += currentVelX;
+        currentY += currentVelY;
+        
+        const groundY = this.getGroundYAtPosition(currentX);
+        if (currentY >= groundY - this.player.height) {
+            points.push({ x: currentX, y: groundY - this.player.height });
+            break;
+        }
+        
+        if (currentX > this.camera.x + this.canvas.width + 500 || 
+            currentY > this.canvas.height + 200) {
+            break;
+        }
+    }
+    
+    return points;
+}
+
+getPredictedJumpVelocity(powerLevel = 1) {
+    // Copy the exact same logic from your jump() method
+    const jumpAngle = this.player.aimAngle;
+    const basePowerRaw = (this.jumpPowerMax + this.jumpPowerMin) / 2;
+    let powerMultiplier = 1.0;
+    
+    switch(powerLevel) {
+        case 1: powerMultiplier = 0.7; break;
+        case 2: powerMultiplier = 1.0; break;
+        case 3: powerMultiplier = 1.4; break;
+    }
+    
+    const basePower = basePowerRaw * powerMultiplier;
+    const angleInDegrees = jumpAngle * 180 / Math.PI;
+    const horizontalComponent = Math.abs(Math.cos(jumpAngle));
+    const verticalComponent = Math.abs(Math.sin(jumpAngle));
+    
+    let normalizedAngle = angleInDegrees;
+    if (normalizedAngle < 0) normalizedAngle += 360;
+    
+    let horizontalMultiplier = 1.0;
+    let verticalMultiplier = 1.0;
+    
+    // Copy all your direction multiplier logic here...
+    if (normalizedAngle >= 345 || normalizedAngle <= 15) {
+        horizontalMultiplier = 2.0;
+        verticalMultiplier = 1.0;
+    } else if (normalizedAngle > 15 && normalizedAngle <= 45) {
+        horizontalMultiplier = 1.9;
+        verticalMultiplier = 1.1;
+    } // ... continue with all the other direction cases
+    
+    const horizontalPower = basePower * horizontalComponent * horizontalMultiplier;
+    const verticalPower = basePower * verticalComponent * verticalMultiplier;
+    
+    const velocityX = horizontalPower * Math.cos(jumpAngle);
+    const velocityY = verticalPower * Math.sin(jumpAngle);
+    
+    return { velocityX, velocityY };
+}
+
+drawTrajectoryLine(ctx, points) {
+    if (points.length < 2) return;
+    
+    ctx.strokeStyle = '#FF6B6B';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    
+    ctx.beginPath();
+    let prevScreenX = Math.floor((points[0].x - this.camera.x) / 2) * 2;
+    let prevScreenY = Math.floor((points[0].y - this.camera.y) / 2) * 2;
+    ctx.moveTo(prevScreenX, prevScreenY);
+    
+    for (let i = 1; i < points.length; i++) {
+        const screenX = Math.floor((points[i].x - this.camera.x) / 2) * 2;
+        const screenY = Math.floor((points[i].y - this.camera.y) / 2) * 2;
+        
+        if (screenX >= -50 && screenX <= this.canvas.width + 50) {
+            ctx.lineTo(screenX, screenY);
+        }
+    }
+    
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Landing marker
+    if (points.length > 0) {
+        const lastPoint = points[points.length - 1];
+        const landingX = Math.floor((lastPoint.x - this.camera.x) / 2) * 2;
+        const landingY = Math.floor((lastPoint.y - this.camera.y) / 2) * 2;
+        
+        if (landingX >= 0 && landingX <= this.canvas.width) {
+            ctx.strokeStyle = '#FF6B6B';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.arc(landingX + this.player.width / 2, landingY + this.player.height / 2, 15, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.strokeStyle = '#FF6B6B';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(landingX + this.player.width / 2 - 5, landingY + this.player.height / 2 - 5);
+            ctx.lineTo(landingX + this.player.width / 2 + 5, landingY + this.player.height / 2 + 5);
+            ctx.moveTo(landingX + this.player.width / 2 + 5, landingY + this.player.height / 2 - 5);
+            ctx.lineTo(landingX + this.player.width / 2 - 5, landingY + this.player.height / 2 + 5);
+            ctx.stroke();
+        }
+    }
+}
     
     // Check if we need to elevate terrain
     checkTerrainElevation() {
