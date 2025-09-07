@@ -587,16 +587,97 @@ class RockClimbingGame {
     
     jump() {
         if (this.player.grounded && this.player.state === 'idle') {
-            // Use mouse-selected angle instead of random
+            // Use mouse-selected angle for directional jump mechanics
             const jumpAngle = this.player.aimAngle;
-            const jumpPower = Math.random() * (this.jumpPowerMax - this.jumpPowerMin) + this.jumpPowerMin;
+            const basePower = Math.random() * (this.jumpPowerMax - this.jumpPowerMin) + this.jumpPowerMin;
             
-            // Calculate velocity components based on mouse angle
-            this.player.velocityX = jumpPower * Math.cos(jumpAngle);
-            this.player.velocityY = jumpPower * Math.sin(jumpAngle); // Positive Y is downward in canvas
+            // Convert angle to degrees for easier calculation
+            const angleInDegrees = jumpAngle * 180 / Math.PI;
+            
+            // Calculate directional power multipliers based on angle
+            const horizontalComponent = Math.abs(Math.cos(jumpAngle));
+            const verticalComponent = Math.abs(Math.sin(jumpAngle));
+            
+            // 12-direction system with sliding multipliers
+            // Normalize angle to 0-360 range for easier calculation
+            let normalizedAngle = angleInDegrees;
+            if (normalizedAngle < 0) normalizedAngle += 360;
+            
+            // Calculate multipliers based on 12 directions (30° segments)
+            // Each direction has optimized horizontal/vertical emphasis
+            let horizontalMultiplier = 1.0;
+            let verticalMultiplier = 1.0;
+            
+            // Right (0°): Max horizontal, min vertical
+            if (normalizedAngle >= 345 || normalizedAngle <= 15) {
+                horizontalMultiplier = 2.0;
+                verticalMultiplier = 1.0;
+            }
+            // Right-Down (30°): High horizontal, low vertical
+            else if (normalizedAngle > 15 && normalizedAngle <= 45) {
+                horizontalMultiplier = 1.9;
+                verticalMultiplier = 1.1;
+            }
+            // Down-Right (60°): Medium horizontal, medium vertical
+            else if (normalizedAngle > 45 && normalizedAngle <= 75) {
+                horizontalMultiplier = 1.7;
+                verticalMultiplier = 1.2;
+            }
+            // Down (90°): Medium horizontal, medium vertical
+            else if (normalizedAngle > 75 && normalizedAngle <= 105) {
+                horizontalMultiplier = 1.5;
+                verticalMultiplier = 1.3;
+            }
+            // Down-Left (120°): Medium horizontal, medium vertical
+            else if (normalizedAngle > 105 && normalizedAngle <= 135) {
+                horizontalMultiplier = 1.7;
+                verticalMultiplier = 1.2;
+            }
+            // Left-Down (150°): High horizontal, low vertical
+            else if (normalizedAngle > 135 && normalizedAngle <= 165) {
+                horizontalMultiplier = 1.9;
+                verticalMultiplier = 1.1;
+            }
+            // Left (180°): Max horizontal, min vertical
+            else if (normalizedAngle > 165 && normalizedAngle <= 195) {
+                horizontalMultiplier = 2.0;
+                verticalMultiplier = 1.0;
+            }
+            // Left-Up (210°): High horizontal, low vertical
+            else if (normalizedAngle > 195 && normalizedAngle <= 225) {
+                horizontalMultiplier = 1.9;
+                verticalMultiplier = 1.1;
+            }
+            // Up-Left (240°): Low horizontal, high vertical
+            else if (normalizedAngle > 225 && normalizedAngle <= 255) {
+                horizontalMultiplier = 1.2;
+                verticalMultiplier = 1.6;
+            }
+            // Up (270°): Min horizontal, max vertical
+            else if (normalizedAngle > 255 && normalizedAngle <= 285) {
+                horizontalMultiplier = 0.9;
+                verticalMultiplier = 1.8;
+            }
+            // Up-Right (300°): Low horizontal, high vertical
+            else if (normalizedAngle > 285 && normalizedAngle <= 315) {
+                horizontalMultiplier = 1.2;
+                verticalMultiplier = 1.6;
+            }
+            // Right-Up (330°): High horizontal, low vertical
+            else if (normalizedAngle > 315 && normalizedAngle < 345) {
+                horizontalMultiplier = 1.9;
+                verticalMultiplier = 1.1;
+            }
+            
+            // Apply sliding scale based on how close to pure direction
+            const horizontalPower = basePower * horizontalComponent * horizontalMultiplier;
+            const verticalPower = basePower * verticalComponent * verticalMultiplier;
+            
+            // Calculate final velocity components
+            this.player.velocityX = horizontalPower * Math.cos(jumpAngle);
+            this.player.velocityY = verticalPower * Math.sin(jumpAngle); // Positive Y is downward in canvas
             
             // Check for extreme downward angles for flip animation
-            const angleInDegrees = jumpAngle * 180 / Math.PI;
             if (Math.abs(angleInDegrees) > 135 || (angleInDegrees > 45 && angleInDegrees < 135)) {
                 // Extreme downward angle - determine flip direction
                 if (jumpAngle > 0) {
