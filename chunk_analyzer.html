@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chunk Analyzer - PNG to JSON Terrain Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin: 10px;
+        }
+        .analysis-results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .json-output {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #007bff;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏔️ Chunk Analyzer</h1>
+        <p>Convert PNG chunk files to JSON terrain data for the mountain climbing game.</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <p>📁 Drop PNG files here or click to select</p>
+            <p><small>Supports 800x400 pixel chunk files</small></p>
+            <input type="file" id="fileInput" accept=".png" multiple style="display: none;">
+        </div>
+        
+        <div class="container" style="margin-top: 20px; background: #f8f9fa; border: 2px solid #007bff;">
+            <h3>🚀 Build Mode: Process All Chunks</h3>
+            <p>Automatically process all PNG files from the chunks folder for game deployment.</p>
+            
+            <div style="display: flex; gap: 20px; align-items: center; margin: 15px 0;">
+                <label for="chunkCount">Number of chunks to select:</label>
+                <input type="number" id="chunkCount" value="10" min="1" max="50" style="padding: 5px; width: 80px;">
+                
+                <label for="selectionMode">Selection mode:</label>
+                <select id="selectionMode" style="padding: 5px;">
+                    <option value="sequential">Sequential (alphabetical)</option>
+                    <option value="random">Random selection</option>
+                </select>
+            </div>
+            
+            <button id="buildModeBtn" onclick="processBuildMode()">🔨 Generate Terrain Data (Build Mode)</button>
+            <div id="buildStatus" style="margin-top: 10px; font-weight: bold;"></div>
+        </div>
+        
+        <div class="progress" id="progressContainer" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div id="canvasContainer"></div>
+        
+        <div class="analysis-results" id="analysisResults" style="display: none;">
+            <h3>📊 Analysis Results</h3>
+            <div id="chunkInfo"></div>
+            <button id="downloadBtn" onclick="downloadJSON()">💾 Download terrain_data.json</button>
+            <button id="copyBtn" onclick="copyToClipboard()">📋 Copy JSON to Clipboard</button>
+        </div>
+        
+        <div id="jsonOutput" class="json-output" style="display: none;"></div>
+        
+        <div class="analysis-results">
+            <h3>📝 Instructions</h3>
+            <h4>For AI Assistant (Future Processing):</h4>
+            <ol>
+                <li>Open this chunk_analyzer.html in a browser</li>
+                <li>Drop or select PNG chunk files (800x400 pixels)</li>
+                <li>Click "Download terrain_data.json" to get the processed data</li>
+                <li>The JSON contains height arrays with midpoint-aligned terrain data</li>
+                <li>Each chunk has 800 height values relative to elevation line</li>
+            </ol>
+            
+            <h4>For Human Helper:</h4>
+            <ol>
+                <li>After AI generates terrain_data.json, copy its contents</li>
+                <li>Open game.js and find the line: <code>// TERRAIN_DATA_PLACEHOLDER</code></li>
+                <li>Replace that line with: <code>const TERRAIN_DATA = [JSON contents here];</code></li>
+                <li>The game will automatically use the embedded terrain data</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let processedChunks = [];
+        let buildModeChunks = [];
+        
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        
+        function handleFiles(files) {
+            const pngFiles = Array.from(files).filter(file => file.type === 'image/png');
+            if (pngFiles.length === 0) {
+                alert('Please select PNG files only.');
+                return;
+            }
+            
+            processedChunks = [];
+            document.getElementById('canvasContainer').innerHTML = '';
+            document.getElementById('progressContainer').style.display = 'block';
+            
+            processFiles(pngFiles);
+        }
+        
+        async function processFiles(files) {
+            for (let i = 0; i < files.length; i++) {
+                const progress = ((i + 1) / files.length) * 100;
+                document.getElementById('progressBar').style.width = progress + '%';
+                
+                await processChunkFile(files[i], i);
+            }
+            
+            displayResults();
+        }
+        
+        function processChunkFile(file, index) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Add canvas to display
+                    const container = document.getElementById('canvasContainer');
+                    const canvasDiv = document.createElement('div');
+                    canvasDiv.innerHTML = `<h4>Chunk ${index}: ${file.name} (${img.width}x${img.height})</h4>`;
+                    canvasDiv.appendChild(canvas);
+                    container.appendChild(canvasDiv);
+                    
+                    // Extract terrain data
+                    const terrainData = extractTerrainData(ctx, img.width, img.height, index, file.name);
+                    processedChunks.push(terrainData);
+                    
+                    resolve();
+                };
+                img.src = URL.createObjectURL(file);
+            });
+        }
+        
+        function extractTerrainData(ctx, width, height, index, filename) {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const terrainHeights = [];
+            
+            // Process each column (X coordinate)
+            for (let x = 0; x < width; x++) {
+                let terrainY = null;
+                
+                // Scan from top to bottom to find first black pixel
+                for (let y = 0; y < height; y++) {
+                    const pixelIndex = (y * width + x) * 4;
+                    const r = imageData.data[pixelIndex];
+                    const g = imageData.data[pixelIndex + 1];
+                    const b = imageData.data[pixelIndex + 2];
+                    
+                    // Check if pixel is black (terrain)
+                    if (r < 50 && g < 50 && b < 50) {
+                        terrainY = y;
+                        break;
+                    }
+                }
+                
+                // Convert to height relative to midpoint (midpoint = height/2)
+                if (terrainY !== null) {
+                    const midpoint = height / 2; // 200 for 400px height
+                    const offsetFromMidpoint = terrainY - midpoint; // -200 to +200
+                    terrainHeights.push(offsetFromMidpoint);
+                } else {
+                    // No terrain found, use midpoint (0 offset)
+                    terrainHeights.push(0);
+                }
+            }
+            
+            return {
+                index: index,
+                filename: filename,
+                width: width,
+                height: height,
+                terrainHeights: terrainHeights,
+                transitionWidth: 80, // Standard transition zone
+                midpoint: height / 2,
+                terrainScale: 0.8 // Default scale factor
+            };
+        }
+        
+        function displayResults() {
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('analysisResults').style.display = 'block';
+            
+            const chunkInfo = document.getElementById('chunkInfo');
+            chunkInfo.innerHTML = `
+                <p><strong>Processed ${processedChunks.length} chunk(s):</strong></p>
+                ${processedChunks.map(chunk => `
+                    <div>
+                        • ${chunk.filename}: ${chunk.width}x${chunk.height} pixels, 
+                        ${chunk.terrainHeights.filter(h => h !== 0).length} terrain pixels found
+                    </div>
+                `).join('')}
+            `;
+            
+            const jsonOutput = document.getElementById('jsonOutput');
+            const terrainData = processedChunks.map(chunk => ({
+                index: chunk.index,
+                width: chunk.width,
+                height: chunk.height,
+                terrainHeights: chunk.terrainHeights,
+                transitionWidth: chunk.transitionWidth,
+                terrainScale: chunk.terrainScale
+            }));
+            
+            // Output JSON without pretty printing (no indentation)
+            jsonOutput.textContent = JSON.stringify(terrainData);
+            jsonOutput.style.display = 'block';
+        }
+        
+        function downloadJSON() {
+            let terrainData;
+            
+            // Use build mode data if available, otherwise use regular processed chunks
+            if (buildModeChunks.length > 0) {
+                terrainData = window.currentTerrainData;
+            } else {
+                terrainData = {
+                    chunks: processedChunks.map(chunk => ({
+                        index: chunk.index,
+                        width: chunk.width,
+                        height: chunk.height,
+                        terrainHeights: chunk.terrainHeights,
+                        transitionWidth: chunk.transitionWidth,
+                        terrainScale: chunk.terrainScale
+                    }))
+                };
+            }
+            
+            // Create JSON without pretty printing (no indentation)
+            const blob = new Blob([JSON.stringify(terrainData)], {
+                type: 'application/json'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'terrain_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function copyToClipboard() {
+            const jsonText = document.getElementById('jsonOutput').textContent;
+            navigator.clipboard.writeText(jsonText).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+        
+        // Build mode: Process all chunks from folder simulation
+        async function processBuildMode() {
+            const chunkCount = parseInt(document.getElementById('chunkCount').value);
+            const selectionMode = document.getElementById('selectionMode').value;
+            const statusDiv = document.getElementById('buildStatus');
+            
+            statusDiv.textContent = 'Build mode requires manual chunk file selection...';
+            statusDiv.style.color = '#007bff';
+            
+            // Create a file input for build mode
+            const buildFileInput = document.createElement('input');
+            buildFileInput.type = 'file';
+            buildFileInput.accept = '.png';
+            buildFileInput.multiple = true;
+            buildFileInput.style.display = 'none';
+            
+            buildFileInput.addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files).filter(file => file.type === 'image/png');
+                
+                if (files.length === 0) {
+                    statusDiv.textContent = 'No PNG files selected!';
+                    statusDiv.style.color = '#dc3545';
+                    return;
+                }
+                
+                statusDiv.textContent = `Found ${files.length} PNG files. Processing...`;
+                statusDiv.style.color = '#28a745';
+                
+                // Sort files alphabetically for consistent ordering
+                files.sort((a, b) => a.name.localeCompare(b.name));
+                
+                // Select chunks based on mode
+                let selectedFiles;
+                if (selectionMode === 'random') {
+                    selectedFiles = shuffleArray([...files]).slice(0, Math.min(chunkCount, files.length));
+                } else {
+                    selectedFiles = files.slice(0, Math.min(chunkCount, files.length));
+                }
+                
+                statusDiv.textContent = `Processing ${selectedFiles.length} selected chunks...`;
+                
+                // Process selected files
+                buildModeChunks = [];
+                document.getElementById('canvasContainer').innerHTML = '';
+                document.getElementById('progressContainer').style.display = 'block';
+                
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    const progress = ((i + 1) / selectedFiles.length) * 100;
+                    document.getElementById('progressBar').style.width = progress + '%';
+                    
+                    await processBuildChunkFile(selectedFiles[i], i);
+                }
+                
+                displayBuildResults();
+                statusDiv.textContent = `✅ Successfully processed ${selectedFiles.length} chunks!`;
+                statusDiv.style.color = '#28a745';
+            });
+            
+            document.body.appendChild(buildFileInput);
+            buildFileInput.click();
+            document.body.removeChild(buildFileInput);
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        function processBuildChunkFile(file, index) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Add canvas to display
+                    const container = document.getElementById('canvasContainer');
+                    const canvasDiv = document.createElement('div');
+                    canvasDiv.innerHTML = `<h4>Chunk ${index}: ${file.name} (${img.width}x${img.height})</h4>`;
+                    canvasDiv.appendChild(canvas);
+                    container.appendChild(canvasDiv);
+                    
+                    // Extract terrain data
+                    const terrainData = extractTerrainData(ctx, img.width, img.height, index, file.name);
+                    buildModeChunks.push(terrainData);
+                    
+                    resolve();
+                };
+                img.src = URL.createObjectURL(file);
+            });
+        }
+        
+        function displayBuildResults() {
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('analysisResults').style.display = 'block';
+            
+            const chunkInfo = document.getElementById('chunkInfo');
+            chunkInfo.innerHTML = `
+                <p><strong>Build Mode - Processed ${buildModeChunks.length} chunk(s):</strong></p>
+                ${buildModeChunks.map(chunk => `
+                    <div>
+                        • ${chunk.filename}: ${chunk.width}x${chunk.height} pixels, 
+                        ${chunk.terrainHeights.filter(h => h !== 0).length} terrain pixels found
+                    </div>
+                `).join('')}
+            `;
+            
+            const jsonOutput = document.getElementById('jsonOutput');
+            const terrainData = {
+                chunks: buildModeChunks.map(chunk => ({
+                    index: chunk.index,
+                    width: chunk.width,
+                    height: chunk.height,
+                    terrainHeights: chunk.terrainHeights,
+                    transitionWidth: chunk.transitionWidth,
+                    terrainScale: chunk.terrainScale
+                }))
+            };
+            
+            // Output JSON without pretty printing (no indentation)
+            jsonOutput.textContent = JSON.stringify(terrainData);
+            jsonOutput.style.display = 'block';
+            
+            // Update download function to use build mode data
+            window.currentTerrainData = terrainData;
+        }
+    </script>
+</body>
+</html>
