@@ -1,3 +1,175 @@
+// Terrain Chunk Management System
+class TerrainChunkManager {
+    constructor(game) {
+        this.game = game;
+        this.chunks = [];
+        this.currentChunk = null;
+        this.chunkWidth = 0;
+        this.chunkHeight = 0;
+        this.debugMode = false;
+        
+        // Terrain positioning
+        this.flatTerrainLength = 800; // Initial flat terrain before first chunk
+        this.chunkStartX = this.flatTerrainLength;
+        this.totalChunkWidth = 0;
+        
+        this.loadChunks();
+    }
+
+    // Load all PNG chunks from assets/chunks folder
+    async loadChunks() {
+        try {
+            // For now, load just one chunk as specified
+            await this.loadChunk('assets/chunks/chunk1.png', 0);
+        } catch (error) {
+            console.warn('No terrain chunks found, using fallback terrain');
+        }
+    }
+
+    // Load a single chunk PNG file
+    async loadChunk(imagePath, index) {
+        try {
+            const img = new Image();
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            return new Promise((resolve, reject) => {
+                img.onload = () => {
+                    try {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        
+                        const pixelData = ctx.getImageData(0, 0, img.width, img.height);
+                        
+                        const chunk = {
+                            index: index,
+                            width: img.width,
+                            height: img.height,
+                            pixelData: pixelData,
+                            startX: this.chunkStartX + this.totalChunkWidth,
+                            endX: this.chunkStartX + this.totalChunkWidth + img.width
+                        };
+                        
+                        this.chunks.push(chunk);
+                        this.totalChunkWidth += img.width;
+                        
+                        // Set dimensions from first chunk
+                        if (index === 0) {
+                            this.chunkWidth = img.width;
+                            this.chunkHeight = img.height;
+                        }
+                        
+                        console.log(`Terrain chunk ${index} loaded: ${img.width}x${img.height} pixels`);
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                img.onerror = () => {
+                    reject(new Error(`Failed to load chunk: ${imagePath}`));
+                };
+                
+                img.src = imagePath;
+            });
+        } catch (error) {
+            console.warn('Chunk loading failed:', error);
+        }
+    }
+
+    // Get terrain Y position at world X coordinate
+    getTerrainYAtWorldX(worldX) {
+        // Before chunks: flat terrain following elevation line
+        if (worldX < this.chunkStartX) {
+            return this.game.getCurrentGroundY(worldX);
+        }
+        
+        // After chunks: flat terrain following elevation line
+        if (worldX >= this.chunkStartX + this.totalChunkWidth) {
+            return this.game.getCurrentGroundY(worldX);
+        }
+        
+        // Within chunk area: use chunk data
+        const chunk = this.getChunkAtWorldX(worldX);
+        if (!chunk) {
+            return this.game.getCurrentGroundY(worldX);
+        }
+        
+        return this.getChunkTerrainY(chunk, worldX);
+    }
+
+    // Find which chunk contains the given world X coordinate
+    getChunkAtWorldX(worldX) {
+        return this.chunks.find(chunk => worldX >= chunk.startX && worldX < chunk.endX);
+    }
+
+    // Get terrain Y from chunk pixel data
+    getChunkTerrainY(chunk, worldX) {
+        // Convert world X to chunk pixel X
+        const chunkPixelX = Math.floor(worldX - chunk.startX);
+        
+        if (chunkPixelX < 0 || chunkPixelX >= chunk.width) {
+            return this.game.getCurrentGroundY(worldX);
+        }
+        
+        // Scan from top to bottom to find first black pixel
+        for (let y = 0; y < chunk.height; y++) {
+            const pixelIndex = (y * chunk.width + chunkPixelX) * 4;
+            const r = chunk.pixelData.data[pixelIndex];
+            const g = chunk.pixelData.data[pixelIndex + 1];
+            const b = chunk.pixelData.data[pixelIndex + 2];
+            
+            // Check if pixel is black (terrain)
+            if (r < 50 && g < 50 && b < 50) {
+                // Convert chunk pixel Y to world Y, respecting elevation line
+                const baseElevation = this.game.getCurrentGroundY(worldX);
+                const chunkRatio = y / chunk.height;
+                const playAreaHeight = this.game.canvas.height - 100; // Account for UI space
+                const terrainY = (chunkRatio * playAreaHeight) + 50; // 50px from top for UI
+                
+                // Blend with elevation line for natural progression
+                return Math.min(terrainY, baseElevation);
+            }
+        }
+        
+        // No terrain found, use flat ground at elevation line
+        return this.game.getCurrentGroundY(worldX);
+    }
+
+    // Check if terrain chunks are loaded
+    hasChunks() {
+        return this.chunks.length > 0;
+    }
+
+    // Debug visualization
+    drawDebugChunks(ctx) {
+        if (!this.debugMode || this.chunks.length === 0) return;
+        
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#00ff00';
+        
+        // Draw chunk boundaries
+        this.chunks.forEach(chunk => {
+            const screenStartX = chunk.startX - this.game.camera.x;
+            const screenEndX = chunk.endX - this.game.camera.x;
+            
+            if (screenEndX > 0 && screenStartX < this.game.canvas.width) {
+                ctx.fillRect(screenStartX, 0, chunk.width, 10);
+            }
+        });
+        
+        ctx.restore();
+    }
+
+    // Toggle debug mode
+    toggleDebug() {
+        this.debugMode = !this.debugMode;
+        console.log(`Terrain chunk debug mode: ${this.debugMode ? 'ON' : 'OFF'}`);
+    }
+}
+
 class RockClimbingGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -135,6 +307,12 @@ class RockClimbingGame {
             duration: 60 // frames for smooth transition
         };
         
+        // Terrain chunk management system
+        this.terrainChunkManager = new TerrainChunkManager(this);
+        
+        // Debug flags
+        this.renderObstacles = false; // Set to false to hide obstacles for debugging
+        this.enableObstacleCollision = false; // Set to false to disable obstacle collision for debugging
         
         this.init();
         this.initMountains();
@@ -208,7 +386,7 @@ class RockClimbingGame {
     // Get ground Y at a specific screen position (for collision detection)
     getGroundYAtPosition(screenX) {
         const worldX = this.totalDistance + screenX;
-        return this.getCurrentGroundY(worldX);
+        return this.terrainChunkManager.getTerrainYAtWorldX(worldX);
     }
     
     // Update camera to keep player at fixed screen position
@@ -473,6 +651,10 @@ class RockClimbingGame {
             }
             if (e.code === 'KeyP' && this.gameState === 'playing') {
                 this.togglePause();
+            }
+            if (e.code === 'KeyC') {
+                // Toggle terrain chunk debug visualization
+                this.terrainChunkManager.toggleDebug();
             }
         });
         
@@ -1159,17 +1341,19 @@ class RockClimbingGame {
         };
         
         // Check obstacle collisions
-        for (let obstacle of this.obstacles) {
-            if (playerRect.x < obstacle.x + obstacle.width &&
-                playerRect.x + playerRect.width > obstacle.x &&
-                playerRect.y < obstacle.y + obstacle.height &&
-                playerRect.y + playerRect.height > obstacle.y) {
-                this.gameState = 'gameOver';
-                this.music.pause();
-                this.music.currentTime = 0;
-                this.playSound('gameOver');
-                this.updateUI();
-                break;
+        if (this.enableObstacleCollision) {
+            for (let obstacle of this.obstacles) {
+                if (playerRect.x < obstacle.x + obstacle.width &&
+                    playerRect.x + playerRect.width > obstacle.x &&
+                    playerRect.y < obstacle.y + obstacle.height &&
+                    playerRect.y + playerRect.height > obstacle.y) {
+                    this.gameState = 'gameOver';
+                    this.music.pause();
+                    this.music.currentTime = 0;
+                    this.playSound('gameOver');
+                    this.updateUI();
+                    break;
+                }
             }
         }
         
@@ -1252,32 +1436,22 @@ class RockClimbingGame {
             }
         });
         
-        // Draw inclined terrain
+        // Draw terrain (chunk-based or flat)
         ctx.fillStyle = '#000000';
         
-        // Draw ground segments that follow the incline
-        const segmentWidth = 20;
+        // Draw terrain segments using chunk data or flat terrain
+        const segmentWidth = 4; // Smaller segments for better chunk detail
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += segmentWidth) {
             const worldX = x + this.camera.x;
-            const groundY1 = this.getGroundYAtPosition(worldX) - this.camera.y;
-            const groundY2 = this.getGroundYAtPosition(worldX + segmentWidth) - this.camera.y;
+            const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
             
-            // Draw main ground segment
-            ctx.fillRect(x, groundY1, segmentWidth, 4);
-            
-            // Draw connecting slope if there's elevation change
-            if (Math.abs(groundY2 - groundY1) > 0.5) {
-                const steps = Math.ceil(Math.abs(groundY2 - groundY1));
-                for (let i = 0; i < steps; i++) {
-                    const stepX = x + (segmentWidth * i / steps);
-                    const stepY = groundY1 + ((groundY2 - groundY1) * i / steps);
-                    ctx.fillRect(stepX, stepY, 2, 2);
-                }
+            // Draw only the surface line (4px thick)
+            if (groundY < this.canvas.height) {
+                ctx.fillRect(x, groundY, segmentWidth, 4);
             }
             
-            // Add ground texture details
-            ctx.fillRect(x + 5, groundY1 + 4, 10, 2);
-            ctx.fillRect(x + 2, groundY1 - 2, 16, 2);
+            // Add surface texture on top
+            ctx.fillRect(x, groundY - 2, segmentWidth, 2);
         }
         
         // Add rocky texture details on visible terrain
@@ -1444,8 +1618,9 @@ class RockClimbingGame {
         ctx.fillRect(px + 24, py + 20, 2, 6);
         
         // Draw obstacles (Rock formations) - different shapes and sizes
-        ctx.fillStyle = '#000000';
-        this.obstacles.forEach(obstacle => {
+        if (this.renderObstacles) {
+            ctx.fillStyle = '#000000';
+            this.obstacles.forEach(obstacle => {
             const ox = Math.floor((obstacle.x - this.camera.x) / 2) * 2;
             const oy = Math.floor((obstacle.y - this.camera.y) / 2) * 2;
             
@@ -1516,6 +1691,7 @@ class RockClimbingGame {
                     break;
             }
         });
+        }
         
         // Draw rain drops
         ctx.fillStyle = '#6B9BD1';
@@ -1625,6 +1801,9 @@ class RockClimbingGame {
         }
         
         ctx.textAlign = 'left'; // Reset text alignment
+        
+        // Draw terrain chunk debug visualization
+        this.terrainChunkManager.drawDebugChunks(ctx);
     }
     
     gameLoop() {

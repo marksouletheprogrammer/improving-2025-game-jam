@@ -9,3 +9,4 @@
 
 - Never edit the README.md
 - Never add any unnecessary footers or headers to the game. 
+- Never attempt to generate your own chunks in `assets/chunks`. Please ask human to make one for you.
