@@ -39,7 +39,7 @@ class RockClimbingGame {
             targetY: 0, // Target camera Y position
             smoothing: 0.1, // Camera smoothing factor (0.1 = smooth, 1.0 = instant)
             threshold: this.canvas.height * 0.5, // Trigger camera movement when player above 50% height
-            leftMargin: 150 // Keep goat this far from left edge
+            fixedScreenX: 150 // Fixed screen position for goat (pixels from left)
         };
         
         // Player (Mountain Goat)
@@ -140,28 +140,27 @@ class RockClimbingGame {
         return this.getCurrentGroundY(worldX);
     }
     
-    // Update camera to keep player in lower left portion of screen
+    // Update camera to keep player at fixed screen position
     updateCamera() {
-        // Calculate player's screen position (world position - camera offset)
-        const playerScreenX = this.player.x - this.camera.x;
-        const playerScreenY = this.player.y - this.camera.y;
-        
-        // Horizontal camera tracking - keep goat in left portion of screen
-        if (playerScreenX > this.camera.leftMargin) {
-            this.camera.targetX = this.player.x - this.camera.leftMargin;
-        }
+        // Horizontal camera tracking - keep goat at fixed screen position
+        // Camera X should be: player world X - desired screen X
+        this.camera.targetX = this.player.x - this.camera.fixedScreenX;
         
         // Vertical camera tracking - if player is above the threshold (50% of screen height), move camera up
+        const playerScreenY = this.player.y - this.camera.y;
         if (playerScreenY < this.camera.threshold) {
             // Calculate how much to move camera up to keep player at threshold
             const targetOffset = this.player.y - this.camera.threshold;
             this.camera.targetY = Math.max(0, targetOffset); // Don't go below 0
         }
         
-        // Smooth camera movement
+        // Smooth camera movement with higher smoothing to reduce sliding appearance
         const diffX = this.camera.targetX - this.camera.x;
         const diffY = this.camera.targetY - this.camera.y;
-        this.camera.x += diffX * this.camera.smoothing;
+        
+        // Use faster smoothing (0.3 instead of 0.1) to reduce lag and sliding effect
+        const fastSmoothing = 0.3;
+        this.camera.x += diffX * fastSmoothing;
         this.camera.y += diffY * this.camera.smoothing;
     }
     
