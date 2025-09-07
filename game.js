@@ -1,4 +1,4 @@
-class RockClimbingGame {
+﻿class RockClimbingGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
@@ -212,7 +212,7 @@ class RockClimbingGame {
         this.camera.x += diffX * fastSmoothing;
         this.camera.y += diffY * this.camera.smoothing;
     }
-    
+
     init() {
         // Initialize clouds
         for (let i = 0; i < 5; i++) {
@@ -457,7 +457,7 @@ class RockClimbingGame {
 
     playSound(name) {
         if (this.sounds[name]) {
-            // Clone so overlapping plays dont cut each other off
+            // Clone so overlapping plays don’t cut each other off
             let sfx = this.sounds[name].cloneNode();
             sfx.volume = this.sounds[name].volume;
             sfx.play().catch(err => console.warn(err));
@@ -803,7 +803,7 @@ class RockClimbingGame {
         this.obstacleTimer++;
         if (this.obstacleTimer > this.obstacleInterval) {
             // Create different types of obstacles
-            const obstacleType = Math.floor(Math.random() * 4); // 4 different types
+            const obstacleType = Math.floor(Math.random() * 5); // 5 different types
             
             // Spawn obstacle off-screen to the right in world coordinates
             const spawnX = this.camera.x + this.canvas.width + 50;
@@ -835,6 +835,11 @@ class RockClimbingGame {
                 case 3: // Tall but narrow rock
                     obstacle.width = 16;
                     obstacle.height = 36;
+                    obstacle.y -= obstacle.height;
+                    break;
+                case 4: // Super wide rock
+                    obstacle.width = 64;
+                    obstacle.height = 24;
                     obstacle.y -= obstacle.height;
                     break;
             }
@@ -1157,6 +1162,21 @@ class RockClimbingGame {
                     // Rock texture
                     ctx.fillRect(ox + 4, oy + 12, 2, 2);
                     ctx.fillRect(ox + 10, oy + 24, 2, 2);
+                    break;
+
+                case 4: // Super wide rock
+                    // Main rock body
+                    ctx.fillRect(ox, oy, 60, 28);
+                    // Rock top
+                    ctx.fillRect(ox - 4, oy + 4, 68, 10);
+                    // Rock middle
+                    ctx.fillRect(ox + 6, oy + 12, 48, 10);
+                    // Rock base
+                    ctx.fillRect(ox + 4, oy + 24, 52, 4);
+                    // Rock texture
+                    ctx.fillRect(ox + 10, oy + 8, 6, 4);
+                    ctx.fillRect(ox + 30, oy + 14, 8, 4);
+                    ctx.fillRect(ox + 46, oy + 18, 6, 4);
                     break;
             }
         });
