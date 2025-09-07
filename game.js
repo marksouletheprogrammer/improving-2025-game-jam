@@ -1,3 +1,17 @@
+// TERRAIN_DATA_PLACEHOLDER - Replace this line with: const TERRAIN_DATA = [JSON data from chunk analyzer];
+const TERRAIN_DATA = {
+    "chunks": [
+      {
+        "index": 0,
+        "width": 800,
+        "height": 400,
+        "terrainHeights": [-16, -13, -10, -6, -3, 1, 4, 8, 11, 14, 18, 21, 25, 28, 31, 34, 37, 40, 43, 46, 48, 50, 52, 54, 56, 58, 59, 60, 61, 62, 63, 63, 64, 64, 64, 64, 64, 63, 63, 62, 61, 60, 59, 58, 58, 57, 56, 55, 54, 54, 53, 53, 52, 52, 52, 52, 52, 52, 52, 52, 53, 53, 54, 54, 55, 56, 57, 58, 58, 59, 60, 61, 61, 62, 63, 63, 64, 64, 64, 64, 64, 63, 63, 62, 61, 60, 59, 58, 56, 54, 52, 50, 48, 46, 43, 40, 37, 34, 31, 28, 25, 21, 18, 14, 11, 8, 4, 1, -3, -6, -10, -13, -16, -19, -22, -25, -28, -31, -34, -37, -40, -42, -45, -48, -50, -53, -55, -57, -59, -61, -63, -65, -66, -67, -68, -69, -69, -70, -70, -70, -70, -69, -69, -68, -67, -66, -65, -64, -63, -62, -60, -59, -57, -56, -55, -53, -52, -51, -50, -49, -48, -47, -46, -45, -45, -45, -45, -44, -45, -45, -45, -46, -47, -47, -48, -50, -51, -52, -54, -55, -57, -58, -60, -61, -63, -65, -66, -68, -69, -71, -72, -74, -75, -76, -77, -78, -78, -79, -79, -79, -80, -80, -79, -79, -79, -78, -77, -77, -76, -75, -73, -72, -71, -70, -68, -67, -66, -64, -63, -62, -60, -59, -58, -57, -56, -55, -54, -53, -53, -52, -52, -52, -52, -52, -52, -52, -52, -53, -53, -54, -54, -55, -56, -57, -58, -58, -59, -60, -61, -61, -62, -63, -63, -64, -64, -64, -64, -64, -63, -63, -62, -61, -60, -59, -58, -56, -54, -52, -50, -48, -46, -43, -40, -37, -34, -31, -28, -25, -21, -18, -14, -11, -8, -4, -1, 2, 5, 8, 11, 13, 16, 19, 22, 24, 27, 29, 32, 34, 36, 38, 40, 41, 43, 44, 45, 46, 47, 47, 48, 48, 48, 48, 47, 47, 46, 45, 44, 43, 42, 40, 39, 37, 36, 34, 32, 30, 29, 27, 25, 24, 22, 20, 19, 18, 16, 15, 14, 13, 12, 11, 11, 10, 10, 9, 9, 9, 9, 10, 10, 10, 11, 11, 12, 12, 13, 13, 14, 15, 15, 16, 16, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 17, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6, 5, 4, 2, 1, 0, -2, -3, -4, -5, -6, -6, -7, -7, -8, -8, -8, -8, -7, -7, -6, -5, -4, -3, -1, 1, 3, 5, 7, 9, 11, 14, 17, 19, 22, 25, 28, 31, 34, 37, 40, 42, 45, 48, 50, 53, 55, 57, 59, 61, 63, 65, 66, 67, 68, 69, 69, 70, 70, 70, 70, 69, 69, 68, 67, 66, 65, 64, 63, 62, 60, 59, 57, 56, 55, 53, 52, 51, 50, 49, 48, 47, 46, 45, 45, 45, 45, 44, 45, 45, 45, 46, 47, 47, 48, 50, 51, 52, 54, 55, 57, 58, 60, 61, 63, 65, 66, 68, 69, 71, 72, 74, 75, 76, 77, 78, 78, 79, 79, 79, 80, 80, 79, 79, 79, 78, 77, 77, 76, 75, 73, 72, 71, 70, 68, 67, 66, 64, 63, 62, 60, 59, 58, 57, 56, 55, 54, 53, 53, 52, 52, 52, 52, 52, 52, 52, 52, 53, 53, 54, 54, 55, 56, 57, 58, 58, 59, 60, 61, 61, 62, 63, 63, 64, 64, 64, 64, 64, 63, 63, 62, 61, 60, 59, 58, 56, 54, 52, 50, 48, 46, 43, 40, 37, 34, 31, 28, 25, 21, 18, 14, 11, 8, 4, 1, -3, -6, -10, -13, -16, -19, -22, -25, -27, -29, -31, -33, -35, -37, -39, -41, -43, -45, -47, -48, -50, -52, -54, -56, -58, -60, -62, -63, -65, -67, -69, -70, -72, -73, -75, -76, -77, -79, -80, -81, -82, -83, -84, -84, -85, -85, -86, -86, -86, -87, -87, -87, -87, -87, -86, -86, -86, -86, -85, -85, -84, -84, -83, -83, -82, -82, -81, -81, -80, -80, -80, -79, -79, -79, -79, -78, -78, -78, -78, -78, -78, -79, -79, -79, -79, -80, -80, -81, -81, -81, -82, -82, -83, -83, -83, -84, -84, -84, -85, -85, -85, -85, -85, -85, -85, -84, -84, -84, -83, -82, -82, -81, -80, -79, -78, -77, -76, -75, -74, -73, -71, -70, -69, -67, -66, -65, -63, -62, -61, -59, -58, -57, -56, -55, -54, -53, -52, -51, -50, -49, -49, -48, -47, -47, -47, -46, -46, -45, -45, -45, -44, -44, -44, -43, -43, -42, -42, -41, -41, -40, -39, -38, -37, -36, -35, -34, -32, -31, -29, -27, -25, -23, -21, -19, -17, -14, -12, -9, -6, -4, -1, 2, 5, 8, 11, 13, 16, 19, 22, 24, 27, 29, 32, 34, 36, 38, 40, 41, 43, 44, 45, 46, 47, 47, 48, 48, 48, 48, 47, 47, 46, 45, 44, 43, 42, 40, 39, 37, 36, 34, 32, 30, 29, 27, 25, 24, 22, 20, 19, 18, 16, 15, 14, 13, 12, 11, 11, 10, 10, 9, 9, 9, 9, 10, 10, 10, 11, 11, 12, 12, 13, 13, 14, 15, 15, 16, 16, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 17, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6, 5, 4, 2, 1, 0, -2, -3, -4, -5, -6, -6, -7, -7, -8, -8, -8, -8, -7, -7, -6, -5, -4, -3, -1, 1, 3, 5, 7, 9, 11, 14, 17, 19, 22, 25, 28, 31, 34, 37, 40, 42, 45, 48, 50, 53, 55, 57, 59, 61, 63, 65, 66, 67, 68, 69, 69, 70, 70, 70, 70, 69, 69, 68, 67, 66, 65, 64, 63, 62, 60, 59, 57, 56, 55, 53, 52, 51, 50, 49, 48, 47, 46, 45, 45, 45, 45, 44, 45, 45, 45, 46, 47, 47, 48, 50, 51, 52, 54, 55, 57, 58, 60, 61, 63, 65, 66, 68, 69, 71, 72, 74, 75, 76, 77, 78, 78, 79, 79, 79, 80, 80, 79, 79, 79, 78, 77, 77, 76, 75, 73, 72, 71, 70, 68, 67, 66, 64, 63, 62, 60, 59, 58, 57, 56, 55, 54, 53, 53, 52, 52, 52, 52, 52, 52, 52, 52, 53, 53, 54, 54, 55, 56, 57, 58, 58, 59, 60, 61, 61, 62, 63, 63, 64, 64, 64, 64, 64, 63, 63, 62, 61, 60, 59, 58, 56, 54, 52, 50, 48, 46, 43, 40, 37, 34, 31, 28, 25, 21, 18, 14, 11, 8, 4, 1, -3, -6, -10, -13, -16],
+        "transitionWidth": 80,
+        "terrainScale": 0.8
+      }
+    ]
+  };
+  
 // Terrain Chunk Management System
 class TerrainChunkManager {
     constructor(game) {
@@ -14,72 +28,54 @@ class TerrainChunkManager {
         this.chunkStartX = this.flatTerrainLength;
         this.totalChunkWidth = 0;
         
-        // Load chunks asynchronously
-        this.loadChunks();
+        // Load chunks from embedded JSON data
+        this.loadChunksFromJSON();
     }
 
-    // Load all PNG chunks from assets/chunks folder
-    async loadChunks() {
+    // Load chunks from embedded JSON terrain data
+    loadChunksFromJSON() {
         try {
-            // For now, load just one chunk as specified
-            console.log('Attempting to load terrain chunk: assets/chunks/chunk1.png');
-            await this.loadChunk('assets/chunks/chunk1.png', 0);
-            console.log('Terrain chunk loaded successfully');
+            // Check if TERRAIN_DATA is defined (will be added by human)
+            if (typeof TERRAIN_DATA === 'undefined') {
+                console.warn('TERRAIN_DATA not found, using fallback terrain');
+                this.chunksLoaded = false;
+                return;
+            }
+            
+            console.log('Loading terrain chunks from embedded JSON data');
+            
+            // Process each chunk from the JSON data
+            TERRAIN_DATA.chunks.forEach(chunkData => {
+                const chunk = {
+                    index: chunkData.index,
+                    width: chunkData.width,
+                    height: chunkData.height,
+                    terrainHeights: chunkData.terrainHeights,
+                    transitionWidth: chunkData.transitionWidth || 80,
+                    terrainScale: chunkData.terrainScale || 0.8,
+                    startX: this.chunkStartX + this.totalChunkWidth,
+                    endX: this.chunkStartX + this.totalChunkWidth + chunkData.width
+                };
+                
+                this.chunks.push(chunk);
+                this.totalChunkWidth += chunkData.width;
+                
+                // Set dimensions from first chunk
+                if (chunkData.index === 0) {
+                    this.chunkWidth = chunkData.width;
+                    this.chunkHeight = chunkData.height;
+                }
+                
+                console.log(`Terrain chunk ${chunkData.index} loaded: ${chunkData.width}x${chunkData.height} pixels`);
+            });
+            
             this.chunksLoaded = true;
+            console.log(`Successfully loaded ${this.chunks.length} terrain chunks from JSON data`);
+            
         } catch (error) {
-            console.warn('No terrain chunks found, using fallback terrain. Error:', error);
+            console.warn('Failed to load terrain chunks from JSON data:', error);
             this.chunksLoaded = false;
         }
-    }
-
-    // Load a single chunk PNG file
-    async loadChunk(imagePath, index) {
-        const img = new Image();
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        return new Promise((resolve, reject) => {
-            img.onload = () => {
-                try {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    
-                    const pixelData = ctx.getImageData(0, 0, img.width, img.height);
-                    
-                    const chunk = {
-                        index: index,
-                        width: img.width,
-                        height: img.height,
-                        pixelData: pixelData,
-                        startX: this.chunkStartX + this.totalChunkWidth,
-                        endX: this.chunkStartX + this.totalChunkWidth + img.width
-                    };
-                    
-                    this.chunks.push(chunk);
-                    this.totalChunkWidth += img.width;
-                    
-                    // Set dimensions from first chunk
-                    if (index === 0) {
-                        this.chunkWidth = img.width;
-                        this.chunkHeight = img.height;
-                    }
-                    
-                    console.log(`Terrain chunk ${index} loaded: ${img.width}x${img.height} pixels`);
-                    resolve();
-                } catch (error) {
-                    console.error('Error processing chunk image:', error);
-                    reject(error);
-                }
-            };
-            
-            img.onerror = (event) => {
-                console.error('Failed to load image:', imagePath, event);
-                reject(new Error(`Failed to load chunk: ${imagePath}`));
-            };
-            
-            img.src = imagePath;
-        });
     }
 
     // Get terrain Y position at world X coordinate
@@ -113,7 +109,7 @@ class TerrainChunkManager {
         return this.chunks.find(chunk => worldX >= chunk.startX && worldX < chunk.endX);
     }
 
-    // Get terrain Y from chunk pixel data
+    // Get terrain Y from pre-processed JSON height data
     getChunkTerrainY(chunk, worldX) {
         // Convert world X to chunk pixel X
         const chunkPixelX = Math.floor(worldX - chunk.startX);
@@ -122,28 +118,33 @@ class TerrainChunkManager {
             return this.game.getCurrentGroundY(worldX);
         }
         
-        // Scan from top to bottom to find first black pixel
-        for (let y = 0; y < chunk.height; y++) {
-            const pixelIndex = (y * chunk.width + chunkPixelX) * 4;
-            const r = chunk.pixelData.data[pixelIndex];
-            const g = chunk.pixelData.data[pixelIndex + 1];
-            const b = chunk.pixelData.data[pixelIndex + 2];
-            
-            // Check if pixel is black (terrain)
-            if (r < 50 && g < 50 && b < 50) {
-                // Convert chunk pixel Y to world Y, respecting elevation line
-                const baseElevation = this.game.getCurrentGroundY(worldX);
-                const chunkRatio = y / chunk.height;
-                const playAreaHeight = this.game.canvas.height - 100; // Account for UI space
-                const terrainY = (chunkRatio * playAreaHeight) + 50; // 50px from top for UI
-                
-                // Blend with elevation line for natural progression
-                return Math.min(terrainY, baseElevation);
-            }
-        }
+        // Get the elevation line at this world position
+        const elevationY = this.game.getCurrentGroundY(worldX);
         
-        // No terrain found, use flat ground at elevation line
-        return this.game.getCurrentGroundY(worldX);
+        // Get pre-calculated height offset from JSON data
+        const heightOffset = chunk.terrainHeights[chunkPixelX];
+        
+        // Apply terrain scale and add to elevation line
+        const terrainY = elevationY + (heightOffset * chunk.terrainScale);
+        
+        // Calculate transition zones for smooth blending
+        const transitionWidth = chunk.transitionWidth;
+        const isInLeftTransition = chunkPixelX < transitionWidth;
+        const isInRightTransition = chunkPixelX >= (chunk.width - transitionWidth);
+        
+        // Apply transition blending at chunk edges
+        if (isInLeftTransition) {
+            // Blend from flat terrain to chunk terrain
+            const blendRatio = chunkPixelX / transitionWidth;
+            return elevationY + (terrainY - elevationY) * blendRatio;
+        } else if (isInRightTransition) {
+            // Blend from chunk terrain back to flat terrain
+            const blendRatio = (chunk.width - chunkPixelX) / transitionWidth;
+            return elevationY + (terrainY - elevationY) * blendRatio;
+        } else {
+            // Full chunk terrain in the middle
+            return terrainY;
+        }
     }
 
     // Check if terrain chunks are loaded

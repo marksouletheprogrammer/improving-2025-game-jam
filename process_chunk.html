@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Process Chunk1.png</title>
+</head>
+<body>
+    <h1>Processing chunk1.png...</h1>
+    <canvas id="canvas" style="border: 1px solid black;"></canvas>
+    <div id="output"></div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            
+            console.log(`Processing ${img.width}x${img.height} image`);
+            
+            const imageData = ctx.getImageData(0, 0, img.width, img.height);
+            const terrainHeights = [];
+            
+            // Process each column (X coordinate)
+            for (let x = 0; x < img.width; x++) {
+                let terrainY = null;
+                
+                // Scan from top to bottom to find first black pixel
+                for (let y = 0; y < img.height; y++) {
+                    const pixelIndex = (y * img.width + x) * 4;
+                    const r = imageData.data[pixelIndex];
+                    const g = imageData.data[pixelIndex + 1];
+                    const b = imageData.data[pixelIndex + 2];
+                    
+                    // Check if pixel is black (terrain)
+                    if (r < 50 && g < 50 && b < 50) {
+                        terrainY = y;
+                        break;
+                    }
+                }
+                
+                // Convert to height relative to midpoint (midpoint = height/2)
+                if (terrainY !== null) {
+                    const midpoint = img.height / 2; // 200 for 400px height
+                    const offsetFromMidpoint = terrainY - midpoint; // -200 to +200
+                    terrainHeights.push(offsetFromMidpoint);
+                } else {
+                    // No terrain found, use midpoint (0 offset)
+                    terrainHeights.push(0);
+                }
+            }
+            
+            const terrainData = {
+                chunks: [{
+                    index: 0,
+                    width: img.width,
+                    height: img.height,
+                    terrainHeights: terrainHeights,
+                    transitionWidth: 80,
+                    terrainScale: 0.8
+                }]
+            };
+            
+            document.getElementById('output').innerHTML = `
+                <h2>Terrain Data Generated:</h2>
+                <p>Width: ${img.width}, Height: ${img.height}</p>
+                <p>Terrain pixels found: ${terrainHeights.filter(h => h !== 0).length}</p>
+                <textarea style="width: 100%; height: 200px;">${JSON.stringify(terrainData, null, 2)}</textarea>
+            `;
+            
+            console.log('Terrain data:', terrainData);
+        };
+        
+        img.src = 'assets/chunks/chunk1.png';
+    </script>
+</body>
+</html>
