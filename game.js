@@ -122,10 +122,18 @@ class TerrainChunkManager {
         const elevationY = this.game.getCurrentGroundY(worldX);
         
         // Get pre-calculated height offset from JSON data
-        const heightOffset = chunk.terrainHeights[chunkPixelX];
+        // Note: heightOffset is calculated from original midpoint, need to adjust for new baseline
+        const originalHeightOffset = chunk.terrainHeights[chunkPixelX];
+        
+        // Convert from midpoint-based to lower 30% baseline
+        // Original: midpoint at height/2 (200px for 400px height)
+        // New: baseline at height*0.7 (280px for 400px height)
+        // Adjustment: shift by (height*0.7 - height/2) = height*0.2 = 80px
+        const baselineAdjustment = chunk.height * 0.2; // 80px for 400px height
+        const adjustedHeightOffset = originalHeightOffset - baselineAdjustment;
         
         // Apply terrain scale and add to elevation line
-        const terrainY = elevationY + (heightOffset * chunk.terrainScale);
+        const terrainY = elevationY + (adjustedHeightOffset * chunk.terrainScale);
         
         // Calculate transition zones for smooth blending
         const transitionWidth = chunk.transitionWidth;
@@ -1182,24 +1190,72 @@ class RockClimbingGame {
             this.player.x += this.player.velocityX;
             this.player.y += this.player.velocityY;
             
-            // Ground collision with inclined terrain
-            const playerGroundY = this.getGroundYAtPosition(this.player.x);
-            if (this.player.y >= playerGroundY - this.player.height) {
-                // Landing - ensure goat always lands on feet and stops immediately
-                this.player.y = playerGroundY - this.player.height;
+            // Enhanced terrain collision detection with forgiving hitbox
+            // Use smaller collision box for more natural visual overlap
+            const collisionMargin = 8; // Reduce collision box by 8px on each side
+            const leftFootX = this.player.x + collisionMargin;
+            const rightFootX = this.player.x + this.player.width - collisionMargin;
+            const centerX = this.player.x + (this.player.width / 2);
+            
+            // Get terrain heights at foot positions
+            const leftFootGroundY = this.getGroundYAtPosition(leftFootX);
+            const rightFootGroundY = this.getGroundYAtPosition(rightFootX);
+            const centerGroundY = this.getGroundYAtPosition(centerX);
+            
+            // Use the highest terrain point (lowest Y value) to ensure goat doesn't sink
+            const playerGroundY = Math.min(leftFootGroundY, rightFootGroundY, centerGroundY);
+            
+            // Check for ground collision with forgiving bottom margin
+            const goatBottomY = this.player.y + this.player.height - 4; // 4px margin from bottom
+            if (goatBottomY >= playerGroundY) {
+                // Natural landing - allow slight visual overlap for better appearance
+                this.player.y = playerGroundY - this.player.height + 3;
                 this.player.velocityX = 0;
                 this.player.velocityY = 0;
                 this.player.jumping = false;
                 this.player.grounded = true;
                 this.player.state = 'idle';
                 this.player.landingPose = true;
-                this.player.flipState = 'normal'; // Reset flip state on landing
+                this.player.flipState = 'normal';
                 
                 // Create dirt particles on landing
-                this.createLandingParticles(this.player.x, this.player.y + this.player.height);
+                this.createLandingParticles(this.player.x, playerGroundY);
                 
-                // Stop all horizontal movement immediately
                 return; // Exit early to prevent any further position updates
+            }
+            
+            // Mid-air terrain attachment - check if goat hits terrain while airborne
+            // Use same forgiving foot sampling points for consistency
+            const attachmentSamplePoints = [leftFootX, centerX, rightFootX];
+            
+            for (let sampleX of attachmentSamplePoints) {
+                const terrainY = this.getGroundYAtPosition(sampleX);
+                
+                // Check if any part of the goat intersects with terrain (using forgiving hitbox)
+                if (goatBottomY > terrainY && 
+                    this.player.y < terrainY + 8) { // 8px tolerance for terrain thickness
+                    
+                    // Find the highest terrain point for natural attachment
+                    const attachLeftY = this.getGroundYAtPosition(leftFootX);
+                    const attachRightY = this.getGroundYAtPosition(rightFootX);
+                    const attachCenterY = this.getGroundYAtPosition(centerX);
+                    const attachGroundY = Math.min(attachLeftY, attachRightY, attachCenterY);
+                    
+                    // Natural attachment with slight visual overlap
+                    this.player.y = attachGroundY - this.player.height + 3;
+                    this.player.velocityX = 0;
+                    this.player.velocityY = 0;
+                    this.player.jumping = false;
+                    this.player.grounded = true;
+                    this.player.state = 'idle';
+                    this.player.landingPose = true;
+                    this.player.flipState = 'normal';
+                    
+                    // Create attachment particles
+                    this.createLandingParticles(this.player.x, attachGroundY);
+                    
+                    return; // Exit early after attachment
+                }
             }
         }
         
