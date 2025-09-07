@@ -7,12 +7,14 @@ class TerrainChunkManager {
         this.chunkWidth = 0;
         this.chunkHeight = 0;
         this.debugMode = false;
+        this.chunksLoaded = false;
         
         // Terrain positioning
         this.flatTerrainLength = 800; // Initial flat terrain before first chunk
         this.chunkStartX = this.flatTerrainLength;
         this.totalChunkWidth = 0;
         
+        // Load chunks asynchronously
         this.loadChunks();
     }
 
@@ -20,66 +22,73 @@ class TerrainChunkManager {
     async loadChunks() {
         try {
             // For now, load just one chunk as specified
+            console.log('Attempting to load terrain chunk: assets/chunks/chunk1.png');
             await this.loadChunk('assets/chunks/chunk1.png', 0);
+            console.log('Terrain chunk loaded successfully');
+            this.chunksLoaded = true;
         } catch (error) {
-            console.warn('No terrain chunks found, using fallback terrain');
+            console.warn('No terrain chunks found, using fallback terrain. Error:', error);
+            this.chunksLoaded = false;
         }
     }
 
     // Load a single chunk PNG file
     async loadChunk(imagePath, index) {
-        try {
-            const img = new Image();
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            return new Promise((resolve, reject) => {
-                img.onload = () => {
-                    try {
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        ctx.drawImage(img, 0, 0);
-                        
-                        const pixelData = ctx.getImageData(0, 0, img.width, img.height);
-                        
-                        const chunk = {
-                            index: index,
-                            width: img.width,
-                            height: img.height,
-                            pixelData: pixelData,
-                            startX: this.chunkStartX + this.totalChunkWidth,
-                            endX: this.chunkStartX + this.totalChunkWidth + img.width
-                        };
-                        
-                        this.chunks.push(chunk);
-                        this.totalChunkWidth += img.width;
-                        
-                        // Set dimensions from first chunk
-                        if (index === 0) {
-                            this.chunkWidth = img.width;
-                            this.chunkHeight = img.height;
-                        }
-                        
-                        console.log(`Terrain chunk ${index} loaded: ${img.width}x${img.height} pixels`);
-                        resolve();
-                    } catch (error) {
-                        reject(error);
+        const img = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        return new Promise((resolve, reject) => {
+            img.onload = () => {
+                try {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const pixelData = ctx.getImageData(0, 0, img.width, img.height);
+                    
+                    const chunk = {
+                        index: index,
+                        width: img.width,
+                        height: img.height,
+                        pixelData: pixelData,
+                        startX: this.chunkStartX + this.totalChunkWidth,
+                        endX: this.chunkStartX + this.totalChunkWidth + img.width
+                    };
+                    
+                    this.chunks.push(chunk);
+                    this.totalChunkWidth += img.width;
+                    
+                    // Set dimensions from first chunk
+                    if (index === 0) {
+                        this.chunkWidth = img.width;
+                        this.chunkHeight = img.height;
                     }
-                };
-                
-                img.onerror = () => {
-                    reject(new Error(`Failed to load chunk: ${imagePath}`));
-                };
-                
-                img.src = imagePath;
-            });
-        } catch (error) {
-            console.warn('Chunk loading failed:', error);
-        }
+                    
+                    console.log(`Terrain chunk ${index} loaded: ${img.width}x${img.height} pixels`);
+                    resolve();
+                } catch (error) {
+                    console.error('Error processing chunk image:', error);
+                    reject(error);
+                }
+            };
+            
+            img.onerror = (event) => {
+                console.error('Failed to load image:', imagePath, event);
+                reject(new Error(`Failed to load chunk: ${imagePath}`));
+            };
+            
+            img.src = imagePath;
+        });
     }
 
     // Get terrain Y position at world X coordinate
     getTerrainYAtWorldX(worldX) {
+        // If chunks haven't loaded yet, use fallback terrain
+        if (!this.chunksLoaded || this.chunks.length === 0) {
+            return this.game.getCurrentGroundY(worldX);
+        }
+        
         // Before chunks: flat terrain following elevation line
         if (worldX < this.chunkStartX) {
             return this.game.getCurrentGroundY(worldX);
@@ -90,7 +99,7 @@ class TerrainChunkManager {
             return this.game.getCurrentGroundY(worldX);
         }
         
-        // Within chunk area: use chunk data
+        // Within chunk range: use chunk data
         const chunk = this.getChunkAtWorldX(worldX);
         if (!chunk) {
             return this.game.getCurrentGroundY(worldX);
@@ -139,7 +148,11 @@ class TerrainChunkManager {
 
     // Check if terrain chunks are loaded
     hasChunks() {
-        return this.chunks.length > 0;
+        const hasChunks = this.chunks.length > 0;
+        if (!hasChunks) {
+            console.log('No chunks loaded yet, chunks array length:', this.chunks.length);
+        }
+        return hasChunks;
     }
 
     // Debug visualization
@@ -1436,22 +1449,32 @@ class RockClimbingGame {
             }
         });
         
-        // Draw terrain (chunk-based or flat)
+        // Draw inclined terrain
         ctx.fillStyle = '#000000';
         
-        // Draw terrain segments using chunk data or flat terrain
-        const segmentWidth = 4; // Smaller segments for better chunk detail
+        // Draw ground segments that follow the incline
+        const segmentWidth = 20;
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += segmentWidth) {
             const worldX = x + this.camera.x;
-            const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
+            const groundY1 = this.getGroundYAtPosition(worldX) - this.camera.y;
+            const groundY2 = this.getGroundYAtPosition(worldX + segmentWidth) - this.camera.y;
             
-            // Draw only the surface line (4px thick)
-            if (groundY < this.canvas.height) {
-                ctx.fillRect(x, groundY, segmentWidth, 4);
+            // Draw main ground segment
+            ctx.fillRect(x, groundY1, segmentWidth, 4);
+            
+            // Draw connecting slope if there's elevation change
+            if (Math.abs(groundY2 - groundY1) > 0.5) {
+                const steps = Math.ceil(Math.abs(groundY2 - groundY1));
+                for (let i = 0; i < steps; i++) {
+                    const stepX = x + (segmentWidth * i / steps);
+                    const stepY = groundY1 + ((groundY2 - groundY1) * i / steps);
+                    ctx.fillRect(stepX, stepY, 2, 2);
+                }
             }
             
-            // Add surface texture on top
-            ctx.fillRect(x, groundY - 2, segmentWidth, 2);
+            // Add ground texture details
+            ctx.fillRect(x + 5, groundY1 + 4, 10, 2);
+            ctx.fillRect(x + 2, groundY1 - 2, 16, 2);
         }
         
         // Add rocky texture details on visible terrain
