@@ -557,6 +557,22 @@ class RockClimbingGame {
             gameOver: new Audio("assets/gameover.m4a")
         };
 
+        // Skill-based scoring system
+        this.scoring = {
+            obstaclePoints: 10,        // Base points for clearing obstacle
+            comboMultiplier: 1,        // Current combo multiplier
+            comboCount: 0,             // Current combo count
+            maxCombo: 0,               // Best combo this game
+            perfectLandings: 0,        // Count of perfect landings
+            riskBonusActive: false,    // Risk bonus for close calls
+            lastObstacleDistance: 0,   // Distance from last obstacle (for risk bonus)
+            jumpStylePoints: 0,        // Bonus for jump style
+            airTimeBonus: 0,           // Bonus for extended air time
+            currentAirTime: 0,         // Current jump air time
+            longestJump: 0,            // Longest single jump distance
+            heightBonus: 0             // Bonus for high jumps
+        };
+
         // Game states
         this.gameState = 'start'; // 'start', 'playing', 'paused', 'gameOver', 'victory'
         this.score = 0;
@@ -774,7 +790,99 @@ class RockClimbingGame {
             });
         }
     }
-    
+
+    awardObstacleClearPoints(obstacle) {
+        let points = this.scoring.obstaclePoints;
+
+        // Combo system - consecutive obstacles without touching ground builds multiplier
+        this.scoring.comboCount++;
+        this.scoring.comboMultiplier = Math.min(1 + (this.scoring.comboCount - 1) * 0.5, 5); // Max 5x multiplier
+        this.scoring.maxCombo = Math.max(this.scoring.maxCombo, this.scoring.comboCount);
+
+        // Risk bonus for close calls (passing obstacle with small margin)
+        const clearanceDistance = this.player.y - (obstacle.y + obstacle.height);
+        if (clearanceDistance < 20) {
+            points += 15; // Risk bonus
+            this.scoring.riskBonusActive = true;
+        }
+
+        // Height bonus for high jumps
+        const maxJumpHeight = this.getCurrentGroundY() - this.player.y;
+        if (maxJumpHeight > 80) {
+            const heightBonus = Math.floor((maxJumpHeight - 80) / 10) * 5;
+            points += heightBonus;
+            this.scoring.heightBonus += heightBonus;
+        }
+
+        // Apply combo multiplier
+        points = Math.floor(points * this.scoring.comboMultiplier);
+
+        this.score += points;
+
+        // Show score popup (you can implement visual feedback here)
+        this.showScorePopup(points, this.scoring.comboMultiplier > 1);
+    }
+
+    awardLandingPoints() {
+        let points = 0;
+
+        // Perfect landing bonus (landing exactly on feet after flip)
+        if (this.player.flipState !== 'normal' && this.player.landingPose) {
+            points += 25;
+            this.scoring.perfectLandings++;
+        }
+
+        // Air time bonus - reward longer jumps
+        if (this.scoring.currentAirTime > 60) { // More than 1 second airborne
+            const airTimeBonus = Math.floor((this.scoring.currentAirTime - 60) / 30) * 5;
+            points += airTimeBonus;
+            this.scoring.airTimeBonus += airTimeBonus;
+        }
+
+        // Jump distance bonus
+        const jumpDistance = Math.abs(this.scoring.jumpStartX - this.player.x);
+        if (jumpDistance > this.scoring.longestJump) {
+            this.scoring.longestJump = jumpDistance;
+            if (jumpDistance > 150) {
+                points += Math.floor((jumpDistance - 150) / 25) * 10; // Bonus for long jumps
+            }
+        }
+
+        if (points > 0) {
+            this.score += points;
+            this.showScorePopup(points, false, 'LANDING');
+        }
+    }
+
+    // Reset combo when touching ground between obstacles
+    resetCombo() {
+        this.scoring.comboCount = 0;
+        this.scoring.comboMultiplier = 1;
+        this.scoring.riskBonusActive = false;
+    }
+
+    // Track jump start for distance calculation
+    startJump() {
+        this.scoring.jumpStartX = this.player.x;
+        this.scoring.currentAirTime = 0;
+    }
+
+    // Visual score popup system
+    showScorePopup(points, isCombo, type = 'POINTS') {
+        // Add to a popup array that you can render
+        if (!this.scorePopups) this.scorePopups = [];
+
+        this.scorePopups.push({
+            x: this.player.x - this.camera.x,
+            y: this.player.y - this.camera.y - 30,
+            points: points,
+            isCombo: isCombo,
+            type: type,
+            life: 60, // frames to display
+            maxLife: 60
+        });
+    }
+
     // Update particle system
     updateParticles() {
         this.particles = this.particles.filter(particle => {
@@ -1390,6 +1498,8 @@ class RockClimbingGame {
     
     jump(powerLevel = 1) {
         if (this.player.grounded && this.player.state === 'idle') {
+            this.startJump();
+
             // Use mouse-selected angle for directional jump mechanics
             const jumpAngle = this.player.aimAngle;
             // Calculate base power with power level multiplier
@@ -1685,9 +1795,6 @@ class RockClimbingGame {
     update() {
         if (this.gameState !== 'playing') return;
         
-        // Update score and difficulty
-        this.score += 0.1;
-        
         // Calculate game speed with terrain level and leaf reduction
         const baseSpeed = this.baseGameSpeed * Math.pow(1.1, this.currentTerrainLevel);
         this.gameSpeed = (baseSpeed + Math.floor(this.score / 100) * 0.3) * (1 - this.speedReduction);
@@ -1736,8 +1843,17 @@ class RockClimbingGame {
                 this.player.grounded = true;
                 this.player.state = 'idle';
                 this.player.landingPose = true;
-                this.player.flipState = 'normal';
-                
+                this.player.flipState = 'normal'; // Reset flip state on landing
+
+                // Award landing points and reset combo if not chaining
+                this.awardLandingPoints();
+
+                // Reset combo if no obstacle was recently cleared
+                const timeSinceLastObstacle = Date.now() - (this.lastObstacleClearedTime || 0);
+                if (timeSinceLastObstacle > 2000) { // 2 seconds
+                    this.resetCombo();
+                }
+
                 // Create dirt particles on landing
                 this.createLandingParticles(this.player.x, playerGroundY);
                 
@@ -1820,6 +1936,9 @@ class RockClimbingGame {
             if (!obstacle.passed && obstacle.x + obstacle.width < this.player.x) {
                 obstacle.passed = true;
                 this.obstaclesCleared++;
+
+                this.awardObstacleClearPoints(obstacle);
+
                 this.checkTerrainElevation();
             }
             
