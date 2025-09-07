@@ -2,7 +2,19 @@ class RockClimbingGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
+
+        // Background music
+        this.music = new Audio("assets/music.mp3");
+        this.music.loop = true;
+        this.music.volume = 0.4;
+
+        // Sound effects
+        this.sounds = {
+            jump: new Audio("assets/jump.wav"),
+            collect: new Audio("assets/collect.mp3"),
+            gameOver: new Audio("assets/gameover.m4a")
+        };
+
         // Game states
         this.gameState = 'start'; // 'start', 'playing', 'paused', 'gameOver'
         this.score = 0;
@@ -376,17 +388,34 @@ class RockClimbingGame {
             }
         });
     }
-    
+
+    playSound(name) {
+        if (this.sounds[name]) {
+            // Clone so overlapping plays don’t cut each other off
+            let sfx = this.sounds[name].cloneNode();
+            sfx.volume = this.sounds[name].volume;
+            sfx.play().catch(err => console.warn(err));
+        }
+    }
+
     startGame() {
         this.gameState = 'playing';
         this.updateUI();
+
+        if (this.music.paused) {
+            this.music.play().catch(err => {
+                console.warn("Music play was blocked:", err);
+            });
+        }
     }
     
     togglePause() {
         if (this.gameState === 'playing') {
             this.gameState = 'paused';
+            this.music.pause();
         } else if (this.gameState === 'paused') {
             this.gameState = 'playing';
+            this.music.play().catch(err => console.warn(err));
         }
         this.updateUI();
     }
@@ -431,6 +460,10 @@ class RockClimbingGame {
         
         this.init();
         this.initMountains();
+
+        if (this.music.paused) {
+            this.music.play().catch(err => console.warn(err));
+        }
     }
     
     jump() {
@@ -438,6 +471,7 @@ class RockClimbingGame {
             this.player.velocityY = this.jumpPower;
             this.player.jumping = true;
             this.player.grounded = false;
+            this.playSound('jump');
         }
     }
     
@@ -775,6 +809,9 @@ class RockClimbingGame {
                 playerRect.y < obstacle.y + obstacle.height &&
                 playerRect.y + playerRect.height > obstacle.y) {
                 this.gameState = 'gameOver';
+                this.music.pause();
+                this.music.currentTime = 0;
+                this.playSound('gameOver');
                 this.updateUI();
                 break;
             }
@@ -791,7 +828,8 @@ class RockClimbingGame {
                 // Collect the leaf
                 leaf.collected = true;
                 this.leafCollected++;
-                
+                this.playSound('collect');
+
                 // Reduce game speed by 10% (max reduction of 50%)
                 this.speedReduction = Math.min(this.speedReduction + 0.1, 0.5);
                 
