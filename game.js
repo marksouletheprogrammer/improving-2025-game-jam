@@ -33,10 +33,13 @@ class RockClimbingGame {
         
         // Camera system
         this.camera = {
+            x: 0, // Current camera X offset
             y: 0, // Current camera Y offset
+            targetX: 0, // Target camera X position
             targetY: 0, // Target camera Y position
             smoothing: 0.1, // Camera smoothing factor (0.1 = smooth, 1.0 = instant)
-            threshold: this.canvas.height * 0.5 // Trigger camera movement when player above 50% height
+            threshold: this.canvas.height * 0.5, // Trigger camera movement when player above 50% height
+            leftMargin: 150 // Keep goat this far from left edge
         };
         
         // Player (Mountain Goat)
@@ -45,16 +48,22 @@ class RockClimbingGame {
             y: this.baseGroundY - 50,
             width: 40,
             height: 50,
+            velocityX: 0, // Horizontal velocity for realistic movement
             velocityY: 0,
             jumping: false,
             grounded: true,
+            state: 'idle', // 'idle', 'airborne'
             targetY: this.baseGroundY - 50, // For smooth terrain transitions
-            jumpHeight: 120 // Maximum jump height
+            jumpHeight: 120, // Maximum jump height
+            landingPose: true // Always land on feet
         };
         
         // Physics
         this.gravity = 0.8;
-        this.jumpPower = -15;
+        this.jumpPowerMin = 10; // Minimum jump power
+        this.jumpPowerMax = 15; // Maximum jump power
+        this.minJumpAngle = 45; // Minimum jump angle in degrees (increased for more height)
+        this.maxJumpAngle = 80; // Maximum jump angle in degrees (increased for more height)
         
         // Obstacles
         this.obstacles = [];
@@ -131,12 +140,18 @@ class RockClimbingGame {
         return this.getCurrentGroundY(worldX);
     }
     
-    // Update camera to keep player in lower portion of screen
+    // Update camera to keep player in lower left portion of screen
     updateCamera() {
         // Calculate player's screen position (world position - camera offset)
+        const playerScreenX = this.player.x - this.camera.x;
         const playerScreenY = this.player.y - this.camera.y;
         
-        // If player is above the threshold (50% of screen height), move camera up
+        // Horizontal camera tracking - keep goat in left portion of screen
+        if (playerScreenX > this.camera.leftMargin) {
+            this.camera.targetX = this.player.x - this.camera.leftMargin;
+        }
+        
+        // Vertical camera tracking - if player is above the threshold (50% of screen height), move camera up
         if (playerScreenY < this.camera.threshold) {
             // Calculate how much to move camera up to keep player at threshold
             const targetOffset = this.player.y - this.camera.threshold;
@@ -144,8 +159,10 @@ class RockClimbingGame {
         }
         
         // Smooth camera movement
-        const diff = this.camera.targetY - this.camera.y;
-        this.camera.y += diff * this.camera.smoothing;
+        const diffX = this.camera.targetX - this.camera.x;
+        const diffY = this.camera.targetY - this.camera.y;
+        this.camera.x += diffX * this.camera.smoothing;
+        this.camera.y += diffY * this.camera.smoothing;
     }
     
     init() {
@@ -255,16 +272,17 @@ class RockClimbingGame {
             nearest: { alpha: 0.85, color: '#404040', baseHeight: 45, heightVariation: 25, speed: 0.12 }
         };
         
-        // Update mountain spawn timer
-        this.mountainSpawnTimer += this.gameSpeed;
+        // Update mountain spawn timer only when goat is airborne
+        const mountainScrollSpeed = this.player.state === 'airborne' ? this.player.velocityX : 0;
+        this.mountainSpawnTimer += mountainScrollSpeed;
         
         Object.keys(this.mountainLayers).forEach(layerName => {
             const config = layerConfigs[layerName];
             const mountains = this.mountainLayers[layerName];
             
-            // Move mountains based on their layer speed
+            // Move mountains based on their layer speed and goat state
             mountains.forEach(mountain => {
-                mountain.x -= this.gameSpeed * config.speed;
+                mountain.x -= mountainScrollSpeed * config.speed;
             });
             
             // Remove mountains that have moved completely off-screen to the left
@@ -391,7 +409,7 @@ class RockClimbingGame {
 
     playSound(name) {
         if (this.sounds[name]) {
-            // Clone so overlapping plays don’t cut each other off
+            // Clone so overlapping plays donÂ’t cut each other off
             let sfx = this.sounds[name].cloneNode();
             sfx.volume = this.sounds[name].volume;
             sfx.play().catch(err => console.warn(err));
@@ -434,13 +452,18 @@ class RockClimbingGame {
         this.currentTerrainLevel = 0;
         this.obstaclesCleared = 0;
         this.totalDistance = 0; // Reset distance tracking
-        this.camera.y = 0; // Reset camera position
+        this.camera.x = 0; // Reset camera position
+        this.camera.y = 0;
+        this.camera.targetX = 0;
         this.camera.targetY = 0;
-        this.player.y = this.baseGroundY - 50;
-        this.player.targetY = this.baseGroundY - 50;
+        this.player.x = 100; // Reset player X position
+        this.player.y = this.baseGroundY - this.player.height;
+        this.player.targetY = this.baseGroundY - this.player.height;
+        this.player.velocityX = 0;
         this.player.velocityY = 0;
         this.player.jumping = false;
         this.player.grounded = true;
+        this.player.state = 'idle';
         this.groundOffset = 0;
         this.terrainTransition.active = false;
         
@@ -467,10 +490,21 @@ class RockClimbingGame {
     }
     
     jump() {
-        if (this.player.grounded) {
-            this.player.velocityY = this.jumpPower;
+        if (this.player.grounded && this.player.state === 'idle') {
+            // Generate random jump angle and power for realistic goat movement
+            const jumpAngle = (Math.random() * (this.maxJumpAngle - this.minJumpAngle) + this.minJumpAngle) * Math.PI / 180;
+            const jumpPower = Math.random() * (this.jumpPowerMax - this.jumpPowerMin) + this.jumpPowerMin;
+            
+            // Calculate velocity components based on angle
+            this.player.velocityX = jumpPower * Math.cos(jumpAngle);
+            this.player.velocityY = -jumpPower * Math.sin(jumpAngle); // Negative for upward movement
+            
+            // Update player state
             this.player.jumping = true;
             this.player.grounded = false;
+            this.player.state = 'airborne';
+            this.player.landingPose = false;
+            
             this.playSound('jump');
         }
     }
@@ -658,29 +692,47 @@ class RockClimbingGame {
         // Update mountains (parallax scrolling)
         this.updateMountains();
         
-        // Update player physics
-        this.player.velocityY += this.gravity;
-        this.player.y += this.player.velocityY;
-        
-        // Ground collision with inclined terrain
-        const playerGroundY = this.getGroundYAtPosition(this.player.x);
-        if (this.player.y >= playerGroundY - this.player.height) {
-            this.player.y = playerGroundY - this.player.height;
-            this.player.velocityY = 0;
-            this.player.jumping = false;
-            this.player.grounded = true;
+        // Update player physics based on state
+        if (this.player.state === 'airborne') {
+            // Apply gravity only to Y velocity
+            this.player.velocityY += this.gravity;
+            
+            // Update position with both X and Y velocity
+            this.player.x += this.player.velocityX;
+            this.player.y += this.player.velocityY;
+            
+            // Ground collision with inclined terrain
+            const playerGroundY = this.getGroundYAtPosition(this.player.x);
+            if (this.player.y >= playerGroundY - this.player.height) {
+                // Landing - ensure goat always lands on feet and stops immediately
+                this.player.y = playerGroundY - this.player.height;
+                this.player.velocityX = 0;
+                this.player.velocityY = 0;
+                this.player.jumping = false;
+                this.player.grounded = true;
+                this.player.state = 'idle';
+                this.player.landingPose = true;
+                
+                // Stop all horizontal movement immediately
+                return; // Exit early to prevent any further position updates
+            }
         }
         
-        // Update total distance traveled and ground scrolling
-        this.totalDistance += this.gameSpeed;
-        this.groundOffset -= this.gameSpeed;
-        if (this.groundOffset <= -50) {
-            this.groundOffset = 0;
+        // Update total distance traveled and ground scrolling only when goat is airborne
+        if (this.player.state === 'airborne') {
+            // World scrolls based on goat's horizontal velocity
+            const scrollSpeed = this.player.velocityX;
+            this.totalDistance += scrollSpeed;
+            this.groundOffset -= scrollSpeed;
+            if (this.groundOffset <= -50) {
+                this.groundOffset = 0;
+            }
         }
         
-        // Update clouds
+        // Update clouds - move slowly when goat is idle, normal speed when airborne
+        const cloudSpeedMultiplier = this.player.state === 'idle' ? 0.1 : 1.0;
         this.clouds.forEach(cloud => {
-            cloud.x -= cloud.speed;
+            cloud.x -= cloud.speed * cloudSpeedMultiplier;
             if (cloud.x + cloud.width < 0) {
                 cloud.x = this.canvas.width + Math.random() * 100;
                 cloud.y = Math.random() * 100 + 20;
@@ -696,9 +748,11 @@ class RockClimbingGame {
             // Create different types of obstacles
             const obstacleType = Math.floor(Math.random() * 4); // 4 different types
             
+            // Spawn obstacle off-screen to the right in world coordinates
+            const spawnX = this.camera.x + this.canvas.width + 50;
             let obstacle = {
-                x: this.canvas.width,
-                y: this.getGroundYAtPosition(this.canvas.width),
+                x: spawnX,
+                y: this.getGroundYAtPosition(spawnX),
                 passed: false,
                 terrainLevel: this.currentTerrainLevel,
                 type: obstacleType
@@ -732,7 +786,7 @@ class RockClimbingGame {
             // Max jump height is 120px, so obstacle height should be less than that
             if (obstacle.height > 100) {
                 obstacle.height = 100;
-                obstacle.y = this.getCurrentGroundY() - obstacle.height;
+                obstacle.y = this.getGroundYAtPosition(obstacle.x) - obstacle.height;
             }
             
             this.obstacles.push(obstacle);
@@ -746,10 +800,11 @@ class RockClimbingGame {
         // Generate leaves
         this.leafTimer++;
         if (this.leafTimer > this.leafInterval) {
-            // Create a new leaf
+            // Create a new leaf - spawn off-screen to the right in world coordinates
+            const leafSpawnX = this.camera.x + this.canvas.width + 50;
             const leaf = {
-                x: this.canvas.width,
-                y: this.canvas.height - 50 - Math.random() * 60 - 60, // Spawn from half jump height to full jump height above ground
+                x: leafSpawnX,
+                y: this.getGroundYAtPosition(leafSpawnX) - 50 - Math.random() * 60 - 60, // Spawn from half jump height to full jump height above ground
                 width: 16,
                 height: 12,
                 collected: false,
@@ -764,9 +819,10 @@ class RockClimbingGame {
             this.leafInterval = Math.random() * 300 + 300;
         }
         
-        // Update obstacles
+        // Update obstacles - only move when goat is airborne
+        const obstacleScrollSpeed = this.player.state === 'airborne' ? this.player.velocityX : 0;
         this.obstacles = this.obstacles.filter(obstacle => {
-            obstacle.x -= this.gameSpeed;
+            obstacle.x -= obstacleScrollSpeed;
             
             // Check if player passed obstacle (for scoring and terrain elevation)
             if (!obstacle.passed && obstacle.x + obstacle.width < this.player.x) {
@@ -778,9 +834,9 @@ class RockClimbingGame {
             return obstacle.x + obstacle.width > 0;
         });
         
-        // Update leaves
+        // Update leaves - only move when goat is airborne
         this.leaves = this.leaves.filter(leaf => {
-            leaf.x -= this.gameSpeed * 0.8; // Leaves move slightly slower than obstacles
+            leaf.x -= obstacleScrollSpeed * 0.8; // Leaves move slightly slower than obstacles
             
             // Update floating animation
             leaf.floatOffset += leaf.floatSpeed;
@@ -902,8 +958,9 @@ class RockClimbingGame {
         // Draw ground segments that follow the incline
         const segmentWidth = 20;
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += segmentWidth) {
-            const groundY1 = this.getGroundYAtPosition(x) - this.camera.y;
-            const groundY2 = this.getGroundYAtPosition(x + segmentWidth) - this.camera.y;
+            const worldX = x + this.camera.x;
+            const groundY1 = this.getGroundYAtPosition(worldX) - this.camera.y;
+            const groundY2 = this.getGroundYAtPosition(worldX + segmentWidth) - this.camera.y;
             
             // Draw main ground segment
             ctx.fillRect(x, groundY1, segmentWidth, 4);
@@ -925,7 +982,8 @@ class RockClimbingGame {
         
         // Add rocky texture details on visible terrain
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += 45) {
-            const groundY = this.getGroundYAtPosition(x) - this.camera.y;
+            const worldX = x + this.camera.x;
+            const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
             ctx.fillRect(x + 10, groundY - 6, 8, 6);
             ctx.fillRect(x + 25, groundY - 4, 6, 4);
         }
@@ -933,7 +991,7 @@ class RockClimbingGame {
         // Draw leaves
         this.leaves.forEach(leaf => {
             if (!leaf.collected) {
-                const lx = Math.floor(leaf.x / 2) * 2;
+                const lx = Math.floor((leaf.x - this.camera.x) / 2) * 2;
                 const ly = Math.floor((leaf.y + Math.sin(leaf.floatOffset) * 5 - this.camera.y) / 2) * 2; // Floating animation with camera
                 
                 ctx.fillStyle = '#2E7D32'; // Green color for leaf
@@ -953,7 +1011,7 @@ class RockClimbingGame {
         
         // Draw player (Mountain Goat) - pixelated monochrome style
         ctx.fillStyle = '#000000';
-        const px = Math.floor(this.player.x / 2) * 2;
+        const px = Math.floor((this.player.x - this.camera.x) / 2) * 2;
         const py = Math.floor((this.player.y - this.camera.y) / 2) * 2;
         
         // Goat body (pixelated)
@@ -963,15 +1021,15 @@ class RockClimbingGame {
         // Goat horns
         ctx.fillRect(px + 26, py + 8, 2, 6);
         ctx.fillRect(px + 32, py + 8, 2, 6);
-        // Goat legs - always show legs but adjust position based on jumping
-        if (this.player.grounded) {
-            // Legs when on ground
+        // Goat legs - show different poses based on state
+        if (this.player.state === 'idle' || this.player.landingPose) {
+            // Legs when on ground - always land on feet
             ctx.fillRect(px + 10, py + 36, 4, 12);
             ctx.fillRect(px + 16, py + 36, 4, 12);
             ctx.fillRect(px + 22, py + 36, 4, 12);
             ctx.fillRect(px + 28, py + 36, 4, 12);
         } else {
-            // Legs when jumping - bent position
+            // Legs when airborne - bent position for jumping
             ctx.fillRect(px + 10, py + 30, 4, 8);
             ctx.fillRect(px + 16, py + 32, 4, 6);
             ctx.fillRect(px + 22, py + 32, 4, 6);
@@ -990,7 +1048,7 @@ class RockClimbingGame {
         // Draw obstacles (Rock formations) - different shapes and sizes
         ctx.fillStyle = '#000000';
         this.obstacles.forEach(obstacle => {
-            const ox = Math.floor(obstacle.x / 2) * 2;
+            const ox = Math.floor((obstacle.x - this.camera.x) / 2) * 2;
             const oy = Math.floor((obstacle.y - this.camera.y) / 2) * 2;
             
             // Draw different rock shapes based on obstacle type
