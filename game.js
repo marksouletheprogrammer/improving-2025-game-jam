@@ -101,6 +101,9 @@ class RockClimbingGame {
             segments: []
         };
         
+        // Particle system for landing effects
+        this.particles = [];
+        
         // Terrain transition
         this.terrainTransition = {
             active: false,
@@ -115,6 +118,52 @@ class RockClimbingGame {
         this.initMountains();
         this.setupEventListeners();
         this.gameLoop();
+    }
+    
+    // Create dirt particles when goat lands
+    createLandingParticles(x, y) {
+        // Create 15-25 dirt particles around the landing point
+        const particleCount = Math.floor(Math.random() * 11) + 15;
+        
+        for (let i = 0; i < particleCount; i++) {
+            this.particles.push({
+                x: x + (Math.random() - 0.5) * 60, // Spread around goat's feet
+                y: y - 5, // Start slightly above ground
+                velocityX: (Math.random() - 0.5) * 6, // Random horizontal velocity
+                velocityY: -(Math.random() * 3 + 1), // Lower upward velocity (1-4 instead of 2-8)
+                life: Math.random() * 20 + 15, // 15-35 frames lifespan
+                maxLife: Math.random() * 20 + 15,
+                size: Math.floor(Math.random() * 3) + 2, // 2-4 pixel size
+                gravity: 0.4 // Slightly more gravity for lower arc
+            });
+        }
+    }
+    
+    // Update particle system
+    updateParticles() {
+        this.particles = this.particles.filter(particle => {
+            // Apply physics
+            particle.velocityY += particle.gravity;
+            particle.x += particle.velocityX;
+            particle.y += particle.velocityY;
+            
+            // Ground collision detection
+            const groundY = this.getGroundYAtPosition(particle.x);
+            if (particle.y >= groundY) {
+                particle.y = groundY; // Stop at ground level
+                particle.velocityY = 0; // Stop vertical movement
+                particle.velocityX *= 0.8; // Reduce horizontal movement on ground
+            }
+            
+            // Reduce life
+            particle.life--;
+            
+            // Add some air resistance
+            particle.velocityX *= 0.98;
+            
+            // Remove dead particles
+            return particle.life > 0;
+        });
     }
     
     // Get current ground Y position with gradual inclination
@@ -471,6 +520,9 @@ class RockClimbingGame {
         this.rainDrops = [];
         this.lightning.active = false;
         
+        // Reset particles
+        this.particles = [];
+        
         // Reset mountains
         this.mountainLayers = {
             farthest: [],
@@ -712,6 +764,9 @@ class RockClimbingGame {
                 this.player.state = 'idle';
                 this.player.landingPose = true;
                 
+                // Create dirt particles on landing
+                this.createLandingParticles(this.player.x, this.player.y + this.player.height);
+                
                 // Stop all horizontal movement immediately
                 return; // Exit early to prevent any further position updates
             }
@@ -740,6 +795,9 @@ class RockClimbingGame {
         
         // Update weather clouds and effects
         this.updateWeather();
+        
+        // Update particle system
+        this.updateParticles();
         
         // Generate obstacles with different shapes and sizes
         this.obstacleTimer++;
@@ -1108,6 +1166,26 @@ class RockClimbingGame {
         this.rainDrops.forEach(drop => {
             ctx.fillRect(Math.floor(drop.x), Math.floor(drop.y - this.camera.y), 1, 4);
         });
+        
+        // Draw dirt particles - monochrome dark colors
+        this.particles.forEach(particle => {
+            const px = Math.floor((particle.x - this.camera.x) / 2) * 2;
+            const py = Math.floor((particle.y - this.camera.y) / 2) * 2;
+            
+            // Fade particles as they age
+            const alpha = particle.life / particle.maxLife;
+            
+            // Use monochrome dark colors - darker grays and black
+            const grayValue = Math.floor(alpha * 128); // 0-128 for dark range
+            const grayHex = grayValue.toString(16).padStart(2, '0');
+            ctx.fillStyle = `#${grayHex}${grayHex}${grayHex}`;
+            
+            // Draw pixelated dirt particle
+            ctx.fillRect(px, py, particle.size, particle.size);
+        });
+        
+        // Reset alpha
+        ctx.globalAlpha = 1.0;
         
         // Draw lightning
         if (this.lightning.active) {
