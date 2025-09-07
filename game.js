@@ -2,10 +2,10 @@
 
 // Terrain Generation Configuration
 const TERRAIN_CONFIG = {
-    chunksToRender: 3,        // Number of terrain chunks to select from available chunks
-    flatChunksToInsert: 2,    // Number of flat sections to insert between terrain chunks
+    chunksToRender: 6,        // Number of terrain chunks to select from available chunks
+    flatChunksToInsert: 4,    // Number of flat sections to insert between terrain chunks
     firstChunkAlwaysFlat: true, // Ensure game always starts with flat terrain
-    flatChunkWidth: 800,      // Width of flat sections (pixels)
+    flatChunkWidth: 1200,     // Width of flat sections (pixels)
     randomSeed: null          // Random seed for reproducible terrain (null = random)
 };
 
@@ -413,7 +413,7 @@ class TerrainChunkManager {
             if (!this.isGameOver) {
                 this.isGameOver = true;
                 console.log('Player reached end of terrain - triggering game over');
-                this.game.triggerGameOver();
+                this.game.triggerVictory();
             }
             return this.game.getCurrentGroundY(worldX);
         }
@@ -538,7 +538,7 @@ class RockClimbingGame {
         };
 
         // Game states
-        this.gameState = 'start'; // 'start', 'playing', 'paused', 'gameOver'
+        this.gameState = 'start'; // 'start', 'playing', 'paused', 'gameOver', 'victory'
         this.score = 0;
         this.gameSpeed = 4;
         this.baseGameSpeed = 4; // Store base speed for calculations
@@ -655,8 +655,8 @@ class RockClimbingGame {
         this.terrainChunkManager = new TerrainChunkManager(this);
         
         // Debug flags
-        this.renderObstacles = false; // Set to false to hide obstacles for debugging
-        this.enableObstacleCollision = false; // Set to false to disable obstacle collision for debugging
+        this.renderObstacles = true; // Set to false to hide obstacles for debugging
+        this.enableObstacleCollision = true; // Set to false to disable obstacle collision for debugging
         
         // Initialize with pre-generated obstacles and leaves
         this.initializePreGeneratedContent();
@@ -694,15 +694,15 @@ class RockClimbingGame {
         console.log(`Positioned player at x:${this.player.x}, y:${this.player.y} (terrain y: ${terrainY})`);
     }
     
-    // Trigger game over when player reaches end of terrain
-    triggerGameOver() {
+    // Trigger victory when player reaches end of terrain
+    triggerVictory() {
         if (this.gameState === 'playing') {
-            this.gameState = 'gameOver';
+            this.gameState = 'victory';
             this.music.pause();
             this.music.currentTime = 0;
-            this.playSound('gameOver');
+            // No sound effect for victory - just silence
             this.updateUI();
-            console.log('Game over: Player reached the end of the mountain!');
+            console.log('Victory: Player reached the end of the mountain!');
         }
     }
     
@@ -1129,7 +1129,7 @@ class RockClimbingGame {
                     this.startGame();
                 } else if (this.gameState === 'playing') {
                     this.startPowerCharging();
-                } else if (this.gameState === 'gameOver') {
+                } else if (this.gameState === 'gameOver' || this.gameState === 'victory') {
                     this.restartGame();
                 }
             }
@@ -1615,6 +1615,11 @@ class RockClimbingGame {
                 climbButton.style.display = 'none';
                 break;
             case 'gameOver':
+                startButton.style.display = 'none';
+                pauseButton.style.display = 'none';
+                climbButton.style.display = 'none';
+                break;
+            case 'victory':
                 startButton.style.display = 'none';
                 pauseButton.style.display = 'none';
                 climbButton.style.display = 'none';
@@ -2293,17 +2298,24 @@ class RockClimbingGame {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             ctx.fillStyle = '#000000';
-            ctx.font = '32px monospace';
+            ctx.font = '48px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2 - 20);
-            ctx.font = '16px monospace';
-            ctx.fillText(`HI ${Math.floor(this.score).toString().padStart(5, '0')}`, this.canvas.width / 2, this.canvas.height / 2 + 20);
-            if (this.currentTerrainLevel > 0) {
-                ctx.fillText(`REACHED LEVEL ${this.currentTerrainLevel + 1}`, this.canvas.width / 2, this.canvas.height / 2 + 40);
-            }
-            if (this.leafCollected > 0) {
-                ctx.fillText(`COLLECTED ${this.leafCollected} LEAVES`, this.canvas.width / 2, this.canvas.height / 2 + 60);
-            }
+            ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2 - 50);
+            ctx.font = '24px monospace';
+            ctx.fillText(`Final Score: ${this.score}`, this.canvas.width / 2, this.canvas.height / 2);
+            ctx.fillText(`Leaves Collected: ${this.leafCollected}`, this.canvas.width / 2, this.canvas.height / 2 + 30);
+            ctx.fillText('Press SPACE to restart', this.canvas.width / 2, this.canvas.height / 2 + 80);
+        } else if (this.gameState === 'victory') {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            ctx.fillStyle = '#000000';
+            ctx.font = '48px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('YOU WIN!', this.canvas.width / 2, this.canvas.height / 2 - 50);
+            ctx.font = '24px monospace';
+            ctx.fillText(`Final Score: ${this.score}`, this.canvas.width / 2, this.canvas.height / 2);
+            ctx.fillText(`Leaves Collected: ${this.leafCollected}`, this.canvas.width / 2, this.canvas.height / 2 + 30);
+            ctx.fillText('Press SPACE to restart', this.canvas.width / 2, this.canvas.height / 2 + 80);
         }
         
         ctx.textAlign = 'left'; // Reset text alignment
