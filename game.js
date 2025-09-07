@@ -67,6 +67,19 @@ class RockClimbingGame {
         this.minJumpAngle = 45; // Minimum jump angle in degrees (increased for more height)
         this.maxJumpAngle = 80; // Maximum jump angle in degrees (increased for more height)
         
+        // Power Control System - Configurable timing constants
+        this.POWER_INDICATOR_DELAY = 100; // ms before indicator shows
+        this.POWER_LEVEL_1_TIME = 500;   // weak jump
+        this.POWER_LEVEL_2_TIME = 1500;   // normal jump
+        this.POWER_LEVEL_3_TIME = 2500;   // big jump
+        this.POWER_CYCLE_RESET = 4000;    // cycle back to level 1
+        
+        // Power state management
+        this.powerCharging = false;
+        this.powerStartTime = 0;
+        this.currentPowerLevel = 1;
+        this.showPowerIndicator = false;
+        
         // Obstacles
         this.obstacles = [];
         this.obstacleTimer = 0;
@@ -443,7 +456,7 @@ class RockClimbingGame {
         
         startButton.addEventListener('click', () => this.startGame());
         pauseButton.addEventListener('click', () => this.togglePause());
-        climbButton.addEventListener('click', () => this.jump());
+        climbButton.addEventListener('click', () => this.startPowerCharging());
         restartButton.addEventListener('click', () => this.restartGame());
         
         // Keyboard controls
@@ -453,7 +466,7 @@ class RockClimbingGame {
                 if (this.gameState === 'start') {
                     this.startGame();
                 } else if (this.gameState === 'playing') {
-                    this.jump();
+                    this.startPowerCharging();
                 } else if (this.gameState === 'gameOver') {
                     this.restartGame();
                 }
@@ -463,15 +476,22 @@ class RockClimbingGame {
             }
         });
         
+        // Add keyup handler for power system
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' && this.gameState === 'playing') {
+                this.executeJump();
+            }
+        });
+        
         // Mouse controls for angle selection
         this.canvas.addEventListener('mousemove', (e) => {
             if (this.gameState === 'playing') {
                 const rect = this.canvas.getBoundingClientRect();
                 this.mouse.x = e.clientX - rect.left;
                 this.mouse.y = e.clientY - rect.top;
-                this.updateAimAngle();
             }
         });
+        this.updateAimAngle();
         
         this.canvas.addEventListener('mouseenter', () => {
             this.mouse.isTracking = true;
@@ -480,6 +500,30 @@ class RockClimbingGame {
         this.canvas.addEventListener('mouseleave', () => {
             this.mouse.isTracking = false;
         });
+    }
+    
+    // Update power charging system
+    updatePowerCharging() {
+        if (this.powerCharging) {
+            const holdDuration = Date.now() - this.powerStartTime;
+            
+            // Show power indicator after delay
+            if (holdDuration >= this.POWER_INDICATOR_DELAY) {
+                this.showPowerIndicator = true;
+                
+                // Calculate current power level with cycling
+                const cycleTime = holdDuration % this.POWER_CYCLE_RESET;
+                if (cycleTime < this.POWER_LEVEL_1_TIME) {
+                    this.currentPowerLevel = 1;
+                } else if (cycleTime < this.POWER_LEVEL_2_TIME) {
+                    this.currentPowerLevel = 2;
+                } else if (cycleTime < this.POWER_LEVEL_3_TIME) {
+                    this.currentPowerLevel = 3;
+                } else {
+                    this.currentPowerLevel = 1; // Reset to level 1 after max time
+                }
+            }
+        }
     }
     
     // Update aim angle based on mouse position
@@ -585,11 +629,62 @@ class RockClimbingGame {
         }
     }
     
-    jump() {
+    // Power charging methods
+    startPowerCharging() {
+        if (this.player.grounded && this.player.state === 'idle' && !this.powerCharging) {
+            this.powerCharging = true;
+            this.powerStartTime = Date.now();
+            this.currentPowerLevel = 1;
+            this.showPowerIndicator = false;
+        }
+    }
+    
+    executeJump() {
+        if (this.powerCharging) {
+            const holdDuration = Date.now() - this.powerStartTime;
+            
+            // Determine power level based on hold duration
+            if (holdDuration < this.POWER_INDICATOR_DELAY) {
+                this.currentPowerLevel = 1; // Early release = weak jump
+            } else {
+                // Calculate power level with cycling
+                const cycleTime = holdDuration % this.POWER_CYCLE_RESET;
+                if (cycleTime < this.POWER_LEVEL_1_TIME) {
+                    this.currentPowerLevel = 1;
+                } else if (cycleTime < this.POWER_LEVEL_2_TIME) {
+                    this.currentPowerLevel = 2;
+                } else if (cycleTime < this.POWER_LEVEL_3_TIME) {
+                    this.currentPowerLevel = 3;
+                } else {
+                    this.currentPowerLevel = 1; // Reset to level 1 after max time
+                }
+            }
+            
+            // Reset power state
+            this.powerCharging = false;
+            this.showPowerIndicator = false;
+            
+            // Execute jump with calculated power level
+            this.jump(this.currentPowerLevel);
+        }
+    }
+    
+    jump(powerLevel = 1) {
         if (this.player.grounded && this.player.state === 'idle') {
             // Use mouse-selected angle for directional jump mechanics
             const jumpAngle = this.player.aimAngle;
-            const basePower = Math.random() * (this.jumpPowerMax - this.jumpPowerMin) + this.jumpPowerMin;
+            // Calculate base power with power level multiplier
+            const basePowerRaw = Math.random() * (this.jumpPowerMax - this.jumpPowerMin) + this.jumpPowerMin;
+            let powerMultiplier = 1.0;
+            
+            // Apply power level scaling
+            switch(powerLevel) {
+                case 1: powerMultiplier = 0.7; break; // Weak jump
+                case 2: powerMultiplier = 1.0; break; // Normal jump
+                case 3: powerMultiplier = 1.4; break; // Big jump
+            }
+            
+            const basePower = basePowerRaw * powerMultiplier;
             
             // Convert angle to degrees for easier calculation
             const angleInDegrees = jumpAngle * 180 / Math.PI;
@@ -913,15 +1008,18 @@ class RockClimbingGame {
         }
         
         // Update total distance traveled and ground scrolling only when goat is airborne
-        if (this.player.state === 'airborne') {
-            // World scrolls based on goat's horizontal velocity
-            const scrollSpeed = this.player.velocityX;
-            this.totalDistance += scrollSpeed;
-            this.groundOffset -= scrollSpeed;
-            if (this.groundOffset <= -50) {
-                this.groundOffset = 0;
-            }
+        if (!this.player.grounded) {
+            this.totalDistance += Math.abs(this.player.velocityX) * 0.1;
         }
+        
+        // Update power charging system
+        this.updatePowerCharging();
+        
+        // Update camera to follow player
+        this.updateCamera();
+        
+        // Update aim angle
+        this.updateAimAngle();
         
         // Update clouds - move slowly when goat is idle, normal speed when airborne
         const cloudSpeedMultiplier = this.player.state === 'idle' ? 0.1 : 1.0;
@@ -1255,6 +1353,43 @@ class RockClimbingGame {
             
             // Reset transparency
             ctx.globalAlpha = 1.0;
+        }
+        
+        // Draw power indicator when charging
+        if (this.showPowerIndicator && this.powerCharging) {
+            const goatScreenX = Math.floor((this.player.x - this.camera.x) / 2) * 2;
+            const goatScreenY = Math.floor((this.player.y - this.camera.y) / 2) * 2;
+            
+            const indicatorX = goatScreenX + this.player.width / 2;
+            const indicatorY = goatScreenY - 30; // Above the goat
+            
+            // Power level colors
+            let powerColor = '#00FF00'; // Green for level 1
+            if (this.currentPowerLevel === 2) {
+                powerColor = '#FFFF00'; // Yellow for level 2
+            } else if (this.currentPowerLevel === 3) {
+                powerColor = '#FF0000'; // Red for level 3
+            }
+            
+            // Draw power level bars
+            const barWidth = 8;
+            const barHeight = 20;
+            const barSpacing = 2;
+            
+            for (let i = 1; i <= 3; i++) {
+                const barX = indicatorX - (barWidth * 1.5) + (i - 1) * (barWidth + barSpacing);
+                
+                if (i <= this.currentPowerLevel) {
+                    // Filled bar for current power level
+                    ctx.fillStyle = powerColor;
+                    ctx.fillRect(barX, indicatorY, barWidth, barHeight);
+                } else {
+                    // Empty bar outline
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(barX, indicatorY, barWidth, barHeight);
+                }
+            }
         }
         
         // Draw player (Mountain Goat) - pixelated monochrome style
