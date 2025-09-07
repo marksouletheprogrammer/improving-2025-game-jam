@@ -1,7 +1,304 @@
 // TERRAIN_DATA_PLACEHOLDER - Replace this line with: const TERRAIN_DATA = [JSON data from chunk analyzer];
+
+// Terrain Generation Configuration
+const TERRAIN_CONFIG = {
+    chunksToRender: 3,        // Number of terrain chunks to select from available chunks
+    flatChunksToInsert: 2,    // Number of flat sections to insert between terrain chunks
+    firstChunkAlwaysFlat: true, // Ensure game always starts with flat terrain
+    flatChunkWidth: 800,      // Width of flat sections (pixels)
+    randomSeed: null          // Random seed for reproducible terrain (null = random)
+};
+
 const TERRAIN_DATA = {
-    "chunks": [{"index":0,"width":800,"height":400,"terrainHeights":[42,42,42,42,42,42,41,41,41,40,40,39,38,37,37,37,36,36,35,35,34,34,34,34,34,34,34,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,32,32,32,32,32,32,32,32,32,32,32,32,32,32,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,30,30,30,30,30,30,30,30,30,30,30,30,30,29,29,29,29,29,29,28,28,28,28,28,27,27,27,27,26,26,26,26,26,26,26,26,26,26,25,25,25,25,25,25,25,25,25,25,25,24,24,24,24,23,23,23,23,23,23,22,22,22,22,22,22,21,21,21,21,21,21,20,20,20,20,20,19,19,19,19,19,18,18,18,18,18,17,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,15,15,15,15,15,15,15,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,13,13,12,12,12,12,12,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,10,10,10,10,10,9,9,9,9,8,8,8,8,7,7,7,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,2,2,2,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,10,10,10,10,10,11,11,11,11,11,11,12,12,12,12,12,12,12,13,13,13,13,13,14,14,14,14,14,14,15,15,15,15,15,15,16,16],"transitionWidth":80,"terrainScale":0.8}]
-  };
+    "chunks": [{"index":0,"width":800,"height":400,"terrainHeights":[20,21,22,23,24,25,25,26,26,26,27,27,28,29,29,30,30,31,31,32,32,33,33,34,34,35,35,35,36,36,36,37,37,38,38,38,39,39,39,40,40,41,41,41,42,42,43,43,44,45,45,46,46,46,47,47,48,48,48,48,49,50,50,51,51,52,52,52,52,52,53,53,53,54,54,55,55,55,55,56,56,57,57,57,58,58,59,60,60,60,61,61,62,62,62,63,63,63,64,63,63,63,63,62,62,61,61,60,60,60,59,58,58,57,57,56,56,55,54,54,53,52,51,50,49,48,48,47,47,46,45,44,43,42,41,40,39,38,37,35,34,32,30,28,26,25,24,22,21,19,17,16,14,12,10,9,7,6,5,3,1,-1,-3,-5,-7,-9,-10,-11,-12,-13,-15,-16,-17,-19,-20,-22,-23,-25,-26,-27,-28,-29,-30,-32,-33,-34,-35,-36,-37,-38,-39,-40,-41,-41,-42,-43,-43,-44,-45,-46,-46,-47,-48,-48,-49,-50,-50,-50,-51,-51,-52,-52,-53,-53,-54,-55,-55,-56,-56,-57,-57,-58,-59,-59,-59,-60,-60,-60,-61,-61,-62,-62,-63,-63,-64,-64,-64,-64,-65,-65,-64,-64,-64,-63,-63,-62,-61,-61,-60,-59,-58,-58,-57,-56,-56,-55,-55,-55,-54,-53,-52,-52,-51,-50,-50,-49,-49,-48,-48,-47,-47,-46,-46,-45,-44,-43,-43,-42,-42,-42,-41,-40,-40,-39,-39,-39,-38,-38,-37,-36,-36,-35,-35,-34,-33,-33,-32,-32,-31,-31,-30,-30,-30,-29,-28,-28,-27,-26,-26,-25,-24,-23,-22,-22,-21,-21,-20,-20,-19,-19,-18,-17,-17,-16,-16,-15,-15,-14,-14,-13,-13,-12,-11,-11,-10,-10,-9,-8,-7,-6,-6,-6,-5,-5,-5,-4,-4,-3,-2,-1,-1,0,0,1,1,2,3,3,4,5,5,6,6,7,7,7,8,8,9,9,9,9,10,10,10,11,11,12,13,13,14,14,14,15,15,15,16,16,17,17,18,18,18,19,19,19,20,21,21,22,23,24,24,25,25,25,26,26,27,27,28,28,29,30,30,31,31,32,32,33,33,34,35,35,35,35,35,36,36,36,36,35,35,35,35,35,35,34,34,33,33,32,32,31,31,30,30,29,28,28,27,27,26,26,25,25,23,22,21,20,20,19,18,17,16,15,14,13,12,11,9,8,7,6,5,4,3,2,0,-1,-2,-3,-4,-5,-7,-8,-10,-11,-13,-14,-16,-18,-20,-22,-24,-25,-26,-27,-28,-29,-30,-31,-32,-34,-35,-37,-38,-39,-40,-41,-42,-44,-44,-45,-45,-46,-47,-48,-48,-49,-49,-49,-49,-49,-49,-50,-50,-50,-50,-51,-51,-52,-52,-53,-53,-54,-55,-55,-56,-56,-56,-57,-57,-58,-58,-59,-60,-60,-61,-61,-61,-62,-62,-63,-63,-64,-64,-63,-62,-61,-61,-60,-59,-58,-57,-56,-55,-54,-53,-53,-52,-51,-51,-50,-50,-49,-48,-47,-47,-46,-46,-45,-44,-44,-43,-42,-42,-41,-40,-40,-39,-38,-37,-36,-35,-35,-34,-33,-33,-32,-31,-31,-30,-29,-28,-28,-27,-26,-25,-25,-24,-23,-23,-22,-22,-21,-20,-20,-19,-18,-17,-17,-16,-16,-15,-14,-14,-13,-12,-11,-11,-10,-10,-9,-9,-8,-8,-7,-7,-6,-6,-5,-4,-3,-3,-2,-2,-1,0,0,1,2,2,3,4,5,5,6,6,7,7,8,9,10,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,25,26,28,29,30,32,34,36,37,39,40,41,43,45,47,49,49,50,51,51,52,53,53,54,54,54,55,56,56,57,58,58,59,59,60,60,61,61,61,62,63,63,63,64,64,65,66,66,66,66,66,66,66,66,67,67,67,67,68,68,68,69,69,69,69,69,69,70,70,70,70,71,71,71,71,71,71,71,71,71,71,71,72,72,72,72,72,72,73,73,73,73,74,74,74,74,74,74,74,74,74,74,74,74,74,74,74,73,73,73,73,73,73,73,72,72,72,72,72,72,72],"transitionWidth":80,"terrainScale":0.8},{"index":1,"width":800,"height":400,"terrainHeights":[42,42,42,42,42,42,41,41,41,40,40,39,38,37,37,37,36,36,35,35,34,34,34,34,34,34,34,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,32,32,32,32,32,32,32,32,32,32,32,32,32,32,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,30,30,30,30,30,30,30,30,30,30,30,30,30,29,29,29,29,29,29,28,28,28,28,28,27,27,27,27,26,26,26,26,26,26,26,26,26,26,25,25,25,25,25,25,25,25,25,25,25,24,24,24,24,23,23,23,23,23,23,22,22,22,22,22,22,21,21,21,21,21,21,20,20,20,20,20,19,19,19,19,19,18,18,18,18,18,17,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,15,15,15,15,15,15,15,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,13,13,12,12,12,12,12,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,10,10,10,10,10,9,9,9,9,8,8,8,8,7,7,7,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,2,2,2,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,10,10,10,10,10,11,11,11,11,11,11,12,12,12,12,12,12,12,13,13,13,13,13,14,14,14,14,14,14,15,15,15,15,15,15,16,16],"transitionWidth":80,"terrainScale":0.8}]
+};
+
+// Terrain Generator - Handles chunk selection and sequencing at game load
+class TerrainGenerator {
+    constructor(terrainData, config) {
+        this.terrainData = terrainData;
+        this.config = config;
+        this.generatedSequence = [];
+        this.totalTerrainWidth = 0;
+        
+        // Initialize random seed if provided
+        if (config.randomSeed !== null) {
+            this.seed = config.randomSeed;
+        } else {
+            this.seed = Math.floor(Math.random() * 1000000);
+        }
+        this.randomState = this.seed;
+        
+        console.log(`TerrainGenerator initialized with seed: ${this.seed}`);
+    }
+    
+    // Seeded random number generator for reproducible terrain
+    seededRandom() {
+        this.randomState = (this.randomState * 9301 + 49297) % 233280;
+        return this.randomState / 233280;
+    }
+    
+    // Generate the complete terrain sequence
+    generateTerrainSequence() {
+        this.generatedSequence = [];
+        this.totalTerrainWidth = 0;
+        
+        console.log('Generating terrain sequence...');
+        
+        // Step 1: Select random chunks from available terrain data
+        const selectedChunks = this.selectRandomChunks();
+        
+        // Step 2: Create sequence with flat chunks inserted
+        const sequence = this.createSequenceWithFlats(selectedChunks);
+        
+        // Step 3: Ensure first chunk is flat if configured
+        if (this.config.firstChunkAlwaysFlat) {
+            this.ensureFirstChunkIsFlat(sequence);
+        }
+        
+        // Step 4: Calculate positions and finalize sequence
+        this.finalizeSequence(sequence);
+        
+        console.log(`Generated terrain sequence: ${this.generatedSequence.length} chunks, total width: ${this.totalTerrainWidth}px`);
+        return this.generatedSequence;
+    }
+    
+    // Select random chunks from available terrain data
+    selectRandomChunks() {
+        const availableChunks = [...this.terrainData.chunks];
+        const selectedChunks = [];
+        
+        // Randomly select chunks up to the configured limit
+        const chunksToSelect = Math.min(this.config.chunksToRender, availableChunks.length);
+        
+        for (let i = 0; i < chunksToSelect; i++) {
+            const randomIndex = Math.floor(this.seededRandom() * availableChunks.length);
+            const selectedChunk = availableChunks.splice(randomIndex, 1)[0];
+            selectedChunks.push(selectedChunk);
+        }
+        
+        // Shuffle the selected chunks for random order
+        for (let i = selectedChunks.length - 1; i > 0; i--) {
+            const j = Math.floor(this.seededRandom() * (i + 1));
+            [selectedChunks[i], selectedChunks[j]] = [selectedChunks[j], selectedChunks[i]];
+        }
+        
+        console.log(`Selected ${selectedChunks.length} random chunks from ${this.terrainData.chunks.length} available`);
+        return selectedChunks;
+    }
+    
+    // Create sequence with flat chunks randomly inserted
+    createSequenceWithFlats(terrainChunks) {
+        const sequence = [];
+        
+        // Add terrain chunks with flat chunks randomly inserted between them
+        for (let i = 0; i < terrainChunks.length; i++) {
+            // Add the terrain chunk
+            sequence.push({
+                type: 'terrain',
+                chunkData: terrainChunks[i]
+            });
+            
+            // Randomly decide to insert flat chunks (except after the last terrain chunk)
+            if (i < terrainChunks.length - 1) {
+                const shouldInsertFlat = this.seededRandom() < 0.7; // 70% chance to insert flat
+                if (shouldInsertFlat && sequence.filter(s => s.type === 'flat').length < this.config.flatChunksToInsert) {
+                    sequence.push({
+                        type: 'flat',
+                        width: this.config.flatChunkWidth
+                    });
+                }
+            }
+        }
+        
+        // Add remaining flat chunks if we haven't reached the target
+        const currentFlats = sequence.filter(s => s.type === 'flat').length;
+        const remainingFlats = this.config.flatChunksToInsert - currentFlats;
+        
+        for (let i = 0; i < remainingFlats; i++) {
+            // Insert at random positions (not at the very beginning)
+            const insertIndex = Math.floor(this.seededRandom() * (sequence.length - 1)) + 1;
+            sequence.splice(insertIndex, 0, {
+                type: 'flat',
+                width: this.config.flatChunkWidth
+            });
+        }
+        
+        return sequence;
+    }
+    
+    // Ensure first chunk is flat terrain
+    ensureFirstChunkIsFlat(sequence) {
+        if (sequence.length > 0 && sequence[0].type !== 'flat') {
+            // Insert flat chunk at the beginning
+            sequence.unshift({
+                type: 'flat',
+                width: this.config.flatChunkWidth
+            });
+        }
+    }
+    
+    // Calculate positions and finalize the sequence
+    finalizeSequence(sequence) {
+        let currentX = 0;
+        
+        for (let i = 0; i < sequence.length; i++) {
+            const item = sequence[i];
+            
+            if (item.type === 'terrain') {
+                this.generatedSequence.push({
+                    type: 'terrain',
+                    index: i,
+                    width: item.chunkData.width,
+                    height: item.chunkData.height,
+                    terrainHeights: item.chunkData.terrainHeights,
+                    transitionWidth: item.chunkData.transitionWidth || 80,
+                    terrainScale: item.chunkData.terrainScale || 0.8,
+                    startX: currentX,
+                    endX: currentX + item.chunkData.width,
+                    originalIndex: item.chunkData.index
+                });
+                currentX += item.chunkData.width;
+            } else if (item.type === 'flat') {
+                this.generatedSequence.push({
+                    type: 'flat',
+                    index: i,
+                    width: item.width,
+                    height: 400, // Standard height
+                    terrainHeights: new Array(item.width).fill(0), // Flat terrain (all zeros)
+                    transitionWidth: 80,
+                    terrainScale: 0.8,
+                    startX: currentX,
+                    endX: currentX + item.width
+                });
+                currentX += item.width;
+            }
+        }
+        
+        this.totalTerrainWidth = currentX;
+    }
+    
+    // Get the generated terrain sequence
+    getGeneratedSequence() {
+        return this.generatedSequence;
+    }
+    
+    // Get total terrain width
+    getTotalWidth() {
+        return this.totalTerrainWidth;
+    }
+    
+    // Pre-generate obstacles and leaves for the terrain sequence
+    generateObstaclesAndLeaves(game) {
+        const obstacles = [];
+        const leaves = [];
+        
+        // Only generate if rendering is enabled
+        if (!game.renderObstacles) {
+            console.log('Obstacle rendering disabled - skipping obstacle/leaf generation');
+            return { obstacles, leaves };
+        }
+        
+        console.log('Pre-generating obstacles and leaves for terrain...');
+        
+        this.generatedSequence.forEach(chunk => {
+            // Generate obstacles for this chunk
+            this.generateChunkObstacles(chunk, obstacles, game);
+            
+            // Generate leaves for this chunk  
+            this.generateChunkLeaves(chunk, leaves, game);
+        });
+        
+        console.log(`Generated ${obstacles.length} obstacles and ${leaves.length} leaves`);
+        return { obstacles, leaves };
+    }
+    
+    // Generate obstacles for a specific chunk
+    generateChunkObstacles(chunk, obstacles, game) {
+        // Skip obstacle generation for flat chunks or if disabled
+        if (chunk.type === 'flat') return;
+        
+        // Use seeded random for consistent obstacle placement
+        const chunkSeed = this.seed + chunk.index * 1000;
+        let obstacleRandom = chunkSeed;
+        
+        const seededObstacleRandom = () => {
+            obstacleRandom = (obstacleRandom * 9301 + 49297) % 233280;
+            return obstacleRandom / 233280;
+        };
+        
+        // Generate 3-8 obstacles per terrain chunk
+        const obstacleCount = Math.floor(seededObstacleRandom() * 6) + 3;
+        
+        for (let i = 0; i < obstacleCount; i++) {
+            // Random position within chunk (avoid edges for smooth transitions)
+            const margin = 100;
+            const x = chunk.startX + margin + seededObstacleRandom() * (chunk.width - 2 * margin);
+            
+            // Different obstacle types (matching current system)
+            const obstacleType = Math.floor(seededObstacleRandom() * 5);
+            let obstacle;
+            
+            if (obstacleType === 0) {
+                // Large boulder
+                obstacle = { x, width: 60, height: 80, shape: 'boulder' };
+            } else if (obstacleType === 1) {
+                // Medium rock
+                obstacle = { x, width: 40, height: 60, shape: 'rock' };
+            } else if (obstacleType === 2) {
+                // Small stone cluster
+                obstacle = { x, width: 30, height: 40, shape: 'stones' };
+            } else if (obstacleType === 3) {
+                // Tall spire
+                obstacle = { x, width: 25, height: 100, shape: 'spire' };
+            } else {
+                // Wide barrier
+                obstacle = { x, width: 80, height: 50, shape: 'barrier' };
+            }
+            
+            // Position on ground
+            obstacle.y = game.terrainChunkManager.getTerrainYAtWorldX(obstacle.x) - obstacle.height;
+            obstacle.passed = false;
+            obstacle.chunkIndex = chunk.index;
+            
+            obstacles.push(obstacle);
+        }
+    }
+    
+    // Generate leaves for a specific chunk
+    generateChunkLeaves(chunk, leaves, game) {
+        // Use seeded random for consistent leaf placement
+        const chunkSeed = this.seed + chunk.index * 2000;
+        let leafRandom = chunkSeed;
+        
+        const seededLeafRandom = () => {
+            leafRandom = (leafRandom * 9301 + 49297) % 233280;
+            return leafRandom / 233280;
+        };
+        
+        // Generate 2-5 leaves per chunk
+        const leafCount = Math.floor(seededLeafRandom() * 4) + 2;
+        
+        for (let i = 0; i < leafCount; i++) {
+            // Random position within chunk
+            const x = chunk.startX + seededLeafRandom() * chunk.width;
+            const groundY = game.terrainChunkManager.getTerrainYAtWorldX(x);
+            
+            const leaf = {
+                x: x,
+                y: groundY - 30 - seededLeafRandom() * 50, // Float above ground
+                width: 12,
+                height: 8,
+                collected: false,
+                floatOffset: seededLeafRandom() * Math.PI * 2,
+                floatSpeed: seededLeafRandom() * 0.1 + 0.05,
+                chunkIndex: chunk.index
+            };
+            
+            leaves.push(leaf);
+        }
+    }
+}
   
 // Terrain Chunk Management System
 class TerrainChunkManager {
@@ -13,60 +310,95 @@ class TerrainChunkManager {
         this.chunkHeight = 0;
         this.debugMode = false;
         this.chunksLoaded = false;
+        this.terrainGenerator = null;
+        this.isGameOver = false;
+        this.preGeneratedObstacles = [];
+        this.preGeneratedLeaves = [];
         
         // Terrain positioning
-        this.flatTerrainLength = 800; // Initial flat terrain before first chunk
-        this.chunkStartX = this.flatTerrainLength;
+        this.flatTerrainLength = 0; // No initial flat terrain - handled by generator
+        this.chunkStartX = 0;
         this.totalChunkWidth = 0;
         
-        // Load chunks from embedded JSON data
-        this.loadChunksFromJSON();
+        // Generate terrain sequence at game load
+        this.generateTerrain();
     }
 
-    // Load chunks from embedded JSON terrain data
-    loadChunksFromJSON() {
+    // Generate terrain sequence using TerrainGenerator
+    generateTerrain() {
         try {
-            // Check if TERRAIN_DATA is defined (will be added by human)
+            // Check if TERRAIN_DATA is defined
             if (typeof TERRAIN_DATA === 'undefined') {
                 console.warn('TERRAIN_DATA not found, using fallback terrain');
                 this.chunksLoaded = false;
                 return;
             }
             
-            console.log('Loading terrain chunks from embedded JSON data');
+            console.log('Generating terrain sequence...');
             
-            // Process each chunk from the JSON data
-            TERRAIN_DATA.chunks.forEach(chunkData => {
-                const chunk = {
-                    index: chunkData.index,
-                    width: chunkData.width,
-                    height: chunkData.height,
-                    terrainHeights: chunkData.terrainHeights,
-                    transitionWidth: chunkData.transitionWidth || 80,
-                    terrainScale: chunkData.terrainScale || 0.8,
-                    startX: this.chunkStartX + this.totalChunkWidth,
-                    endX: this.chunkStartX + this.totalChunkWidth + chunkData.width
-                };
-                
-                this.chunks.push(chunk);
-                this.totalChunkWidth += chunkData.width;
-                
-                // Set dimensions from first chunk
-                if (chunkData.index === 0) {
-                    this.chunkWidth = chunkData.width;
-                    this.chunkHeight = chunkData.height;
-                }
-                
-                console.log(`Terrain chunk ${chunkData.index} loaded: ${chunkData.width}x${chunkData.height} pixels`);
-            });
+            // Create terrain generator and generate sequence
+            this.terrainGenerator = new TerrainGenerator(TERRAIN_DATA, TERRAIN_CONFIG);
+            const generatedSequence = this.terrainGenerator.generateTerrainSequence();
             
-            this.chunksLoaded = true;
-            console.log(`Successfully loaded ${this.chunks.length} terrain chunks from JSON data`);
+            // Load the generated sequence into chunks
+            this.loadGeneratedSequence(generatedSequence);
+            
+            // Pre-generate obstacles and leaves
+            const preGenerated = this.terrainGenerator.generateObstaclesAndLeaves(this.game);
+            this.preGeneratedObstacles = preGenerated.obstacles;
+            this.preGeneratedLeaves = preGenerated.leaves;
             
         } catch (error) {
-            console.warn('Failed to load terrain chunks from JSON data:', error);
+            console.warn('Failed to generate terrain sequence:', error);
             this.chunksLoaded = false;
         }
+    }
+    
+    // Load generated terrain sequence into chunk system
+    loadGeneratedSequence(generatedSequence) {
+        this.chunks = [];
+        this.totalChunkWidth = 0;
+        
+        generatedSequence.forEach(chunkData => {
+            const chunk = {
+                index: chunkData.index,
+                type: chunkData.type,
+                width: chunkData.width,
+                height: chunkData.height,
+                terrainHeights: chunkData.terrainHeights,
+                transitionWidth: chunkData.transitionWidth,
+                terrainScale: chunkData.terrainScale,
+                startX: chunkData.startX,
+                endX: chunkData.endX,
+                originalIndex: chunkData.originalIndex || null
+            };
+            
+            this.chunks.push(chunk);
+            
+            // Set dimensions from first chunk
+            if (chunkData.index === 0) {
+                this.chunkWidth = chunkData.width;
+                this.chunkHeight = chunkData.height;
+            }
+            
+            const typeLabel = chunkData.type === 'flat' ? 'flat' : `terrain (orig: ${chunkData.originalIndex})`;
+            console.log(`Generated chunk ${chunkData.index} (${typeLabel}): ${chunkData.width}x${chunkData.height} pixels`);
+        });
+        
+        this.totalChunkWidth = this.terrainGenerator.getTotalWidth();
+        this.chunksLoaded = true;
+        
+        console.log(`Successfully loaded ${this.chunks.length} generated chunks, total width: ${this.totalChunkWidth}px`);
+    }
+    
+    // Get pre-generated obstacles for the game
+    getPreGeneratedObstacles() {
+        return this.preGeneratedObstacles;
+    }
+    
+    // Get pre-generated leaves for the game  
+    getPreGeneratedLeaves() {
+        return this.preGeneratedLeaves;
     }
 
     // Get terrain Y position at world X coordinate
@@ -76,13 +408,13 @@ class TerrainChunkManager {
             return this.game.getCurrentGroundY(worldX);
         }
         
-        // Before chunks: flat terrain following elevation line
-        if (worldX < this.chunkStartX) {
-            return this.game.getCurrentGroundY(worldX);
-        }
-        
-        // After chunks: flat terrain following elevation line
-        if (worldX >= this.chunkStartX + this.totalChunkWidth) {
+        // Check if player has reached the end of terrain (game over condition)
+        if (worldX >= this.totalChunkWidth) {
+            if (!this.isGameOver) {
+                this.isGameOver = true;
+                console.log('Player reached end of terrain - triggering game over');
+                this.game.triggerGameOver();
+            }
             return this.game.getCurrentGroundY(worldX);
         }
         
@@ -111,6 +443,11 @@ class TerrainChunkManager {
         
         // Get the elevation line at this world position
         const elevationY = this.game.getCurrentGroundY(worldX);
+        
+        // For flat chunks, just return the elevation line
+        if (chunk.type === 'flat') {
+            return elevationY;
+        }
         
         // Get pre-calculated height offset from JSON data
         // Note: heightOffset is calculated from original midpoint, need to adjust for new baseline
@@ -230,7 +567,7 @@ class RockClimbingGame {
         // Player (Mountain Goat)
         this.player = {
             x: 100,
-            y: this.baseGroundY - 50,
+            y: this.baseGroundY - 50, // Will be updated after terrain loads
             width: 40,
             height: 50,
             velocityX: 0, // Horizontal velocity for realistic movement
@@ -238,7 +575,7 @@ class RockClimbingGame {
             jumping: false,
             grounded: true,
             state: 'idle', // 'idle', 'airborne'
-            targetY: this.baseGroundY - 50, // For smooth terrain transitions
+            targetY: this.baseGroundY - 50, // Will be updated after terrain loads
             jumpHeight: 120, // Maximum jump height
             landingPose: true, // Always land on feet
             aimAngle: 0, // Current aim angle from mouse
@@ -265,15 +602,9 @@ class RockClimbingGame {
         this.currentPowerLevel = 1;
         this.showPowerIndicator = false;
         
-        // Obstacles
+        // Obstacles and leaves (will be populated from pre-generated content)
         this.obstacles = [];
-        this.obstacleTimer = 0;
-        this.obstacleInterval = 100;
-        
-        // Leaves
         this.leaves = [];
-        this.leafTimer = 0;
-        this.leafInterval = 300; // Initial interval for leaf appearance
         this.leafCollected = 0; // Track collected leaves
         
         // Background elements
@@ -327,10 +658,52 @@ class RockClimbingGame {
         this.renderObstacles = false; // Set to false to hide obstacles for debugging
         this.enableObstacleCollision = false; // Set to false to disable obstacle collision for debugging
         
+        // Initialize with pre-generated obstacles and leaves
+        this.initializePreGeneratedContent();
+        
         this.init();
         this.initMountains();
         this.setupEventListeners();
         this.gameLoop();
+    }
+    
+    // Initialize pre-generated obstacles and leaves from terrain manager
+    initializePreGeneratedContent() {
+        // Wait for terrain generation to complete, then use pre-generated content
+        const checkTerrain = () => {
+            if (this.terrainChunkManager.chunksLoaded) {
+                this.obstacles = this.terrainChunkManager.getPreGeneratedObstacles();
+                this.leaves = this.terrainChunkManager.getPreGeneratedLeaves();
+                console.log(`Loaded ${this.obstacles.length} pre-generated obstacles and ${this.leaves.length} pre-generated leaves`);
+                
+                // Position player on the terrain at starting position
+                this.positionPlayerOnTerrain();
+            } else {
+                // Check again in next frame if terrain isn't ready yet
+                requestAnimationFrame(checkTerrain);
+            }
+        };
+        checkTerrain();
+    }
+    
+    // Position player correctly on the terrain surface
+    positionPlayerOnTerrain() {
+        const terrainY = this.terrainChunkManager.getTerrainYAtWorldX(this.player.x);
+        this.player.y = terrainY - this.player.height;
+        this.player.targetY = this.player.y;
+        console.log(`Positioned player at x:${this.player.x}, y:${this.player.y} (terrain y: ${terrainY})`);
+    }
+    
+    // Trigger game over when player reaches end of terrain
+    triggerGameOver() {
+        if (this.gameState === 'playing') {
+            this.gameState = 'gameOver';
+            this.music.pause();
+            this.music.currentTime = 0;
+            this.playSound('gameOver');
+            this.updateUI();
+            console.log('Game over: Player reached the end of the mountain!');
+        }
     }
     
     // Create dirt particles when goat lands
@@ -873,10 +1246,12 @@ class RockClimbingGame {
         this.baseGameSpeed = 4;
         this.speedReduction = 0;
         this.obstacles = [];
-        this.obstacleTimer = 0;
         this.leaves = [];
-        this.leafTimer = 0;
         this.leafCollected = 0;
+        
+        // Reload pre-generated obstacles and leaves
+        this.initializePreGeneratedContent();
+        
         this.currentTerrainLevel = 0;
         this.obstaclesCleared = 0;
         this.totalDistance = 0; // Reset distance tracking
@@ -885,6 +1260,7 @@ class RockClimbingGame {
         this.camera.targetX = 0;
         this.camera.targetY = 0;
         this.player.x = 100; // Reset player X position
+        // Position will be updated after terrain reloads
         this.player.y = this.baseGroundY - this.player.height;
         this.player.targetY = this.baseGroundY - this.player.height;
         this.player.velocityX = 0;
@@ -1378,87 +1754,9 @@ class RockClimbingGame {
         // Update particle system
         this.updateParticles();
         
-        // Generate obstacles with different shapes and sizes
-        this.obstacleTimer++;
-        if (this.obstacleTimer > this.obstacleInterval) {
-            // Create different types of obstacles
-            const obstacleType = Math.floor(Math.random() * 5); // 5 different types
-            
-            // Spawn obstacle off-screen to the right in world coordinates
-            const spawnX = this.camera.x + this.canvas.width + 50;
-            let obstacle = {
-                x: spawnX,
-                y: this.getGroundYAtPosition(spawnX),
-                passed: false,
-                terrainLevel: this.currentTerrainLevel,
-                type: obstacleType
-            };
-            
-            // Define different obstacle shapes and sizes
-            switch(obstacleType) {
-                case 0: // Small rock
-                    obstacle.width = 16;
-                    obstacle.height = 24;
-                    obstacle.y -= obstacle.height;
-                    break;
-                case 1: // Medium rock
-                    obstacle.width = 24;
-                    obstacle.height = 32;
-                    obstacle.y -= obstacle.height;
-                    break;
-                case 2: // Wide but short rock
-                    obstacle.width = 36;
-                    obstacle.height = 20;
-                    obstacle.y -= obstacle.height;
-                    break;
-                case 3: // Tall but narrow rock
-                    obstacle.width = 16;
-                    obstacle.height = 36;
-                    obstacle.y -= obstacle.height;
-                    break;
-                case 4: // Super wide rock
-                    obstacle.width = 64;
-                    obstacle.height = 24;
-                    obstacle.y -= obstacle.height;
-                    break;
-            }
-            
-            // Ensure obstacle height is not more than goat can jump
-            // Max jump height is 120px, so obstacle height should be less than that
-            if (obstacle.height > 100) {
-                obstacle.height = 100;
-                obstacle.y = this.getGroundYAtPosition(obstacle.x) - obstacle.height;
-            }
-            
-            this.obstacles.push(obstacle);
-            this.obstacleTimer = 0;
-            
-            // Obstacle interval decreases with terrain level (more frequent obstacles)
-            const baseInterval = 80 - (this.currentTerrainLevel * 5);
-            this.obstacleInterval = Math.random() * 30 + Math.max(baseInterval, 40) - Math.floor(this.score / 100) * 3;
-        }
+        // Dynamic obstacle generation removed - using pre-generated obstacles
         
-        // Generate leaves
-        this.leafTimer++;
-        if (this.leafTimer > this.leafInterval) {
-            // Create a new leaf - spawn off-screen to the right in world coordinates
-            const leafSpawnX = this.camera.x + this.canvas.width + 50;
-            const leaf = {
-                x: leafSpawnX,
-                y: this.getGroundYAtPosition(leafSpawnX) - 50 - Math.random() * 60 - 60, // Spawn from half jump height to full jump height above ground
-                width: 16,
-                height: 12,
-                collected: false,
-                floatOffset: 0, // For floating animation
-                floatSpeed: Math.random() * 0.1 + 0.05 // Floating speed
-            };
-            
-            this.leaves.push(leaf);
-            this.leafTimer = 0;
-            
-            // Randomize next leaf interval (between 5-15 seconds at current game speed)
-            this.leafInterval = Math.random() * 300 + 300;
-        }
+        // Dynamic leaf generation removed - using pre-generated leaves
         
         // Update obstacles - only move when goat is airborne
         const obstacleScrollSpeed = this.player.state === 'airborne' ? this.player.velocityX : 0;
