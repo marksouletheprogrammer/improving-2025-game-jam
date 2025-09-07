@@ -3,14 +3,14 @@
 // Terrain Generation Configuration
 const TERRAIN_CONFIG = {
     chunksToRender: 6,        // Number of terrain chunks to select from available chunks
-    flatChunksToInsert: 4,    // Number of flat sections to insert between terrain chunks
+    flatChunksToInsert: 3,    // Number of flat sections to insert between terrain chunks
     firstChunkAlwaysFlat: true, // Ensure game always starts with flat terrain
-    flatChunkWidth: 1200,     // Width of flat sections (pixels)
+    flatChunkWidth: 400,     // Width of flat sections (pixels)
     randomSeed: null          // Random seed for reproducible terrain (null = random)
 };
 
 const TERRAIN_DATA = {
-    "chunks": [{"index":0,"width":800,"height":400,"terrainHeights":[20,21,22,23,24,25,25,26,26,26,27,27,28,29,29,30,30,31,31,32,32,33,33,34,34,35,35,35,36,36,36,37,37,38,38,38,39,39,39,40,40,41,41,41,42,42,43,43,44,45,45,46,46,46,47,47,48,48,48,48,49,50,50,51,51,52,52,52,52,52,53,53,53,54,54,55,55,55,55,56,56,57,57,57,58,58,59,60,60,60,61,61,62,62,62,63,63,63,64,63,63,63,63,62,62,61,61,60,60,60,59,58,58,57,57,56,56,55,54,54,53,52,51,50,49,48,48,47,47,46,45,44,43,42,41,40,39,38,37,35,34,32,30,28,26,25,24,22,21,19,17,16,14,12,10,9,7,6,5,3,1,-1,-3,-5,-7,-9,-10,-11,-12,-13,-15,-16,-17,-19,-20,-22,-23,-25,-26,-27,-28,-29,-30,-32,-33,-34,-35,-36,-37,-38,-39,-40,-41,-41,-42,-43,-43,-44,-45,-46,-46,-47,-48,-48,-49,-50,-50,-50,-51,-51,-52,-52,-53,-53,-54,-55,-55,-56,-56,-57,-57,-58,-59,-59,-59,-60,-60,-60,-61,-61,-62,-62,-63,-63,-64,-64,-64,-64,-65,-65,-64,-64,-64,-63,-63,-62,-61,-61,-60,-59,-58,-58,-57,-56,-56,-55,-55,-55,-54,-53,-52,-52,-51,-50,-50,-49,-49,-48,-48,-47,-47,-46,-46,-45,-44,-43,-43,-42,-42,-42,-41,-40,-40,-39,-39,-39,-38,-38,-37,-36,-36,-35,-35,-34,-33,-33,-32,-32,-31,-31,-30,-30,-30,-29,-28,-28,-27,-26,-26,-25,-24,-23,-22,-22,-21,-21,-20,-20,-19,-19,-18,-17,-17,-16,-16,-15,-15,-14,-14,-13,-13,-12,-11,-11,-10,-10,-9,-8,-7,-6,-6,-6,-5,-5,-5,-4,-4,-3,-2,-1,-1,0,0,1,1,2,3,3,4,5,5,6,6,7,7,7,8,8,9,9,9,9,10,10,10,11,11,12,13,13,14,14,14,15,15,15,16,16,17,17,18,18,18,19,19,19,20,21,21,22,23,24,24,25,25,25,26,26,27,27,28,28,29,30,30,31,31,32,32,33,33,34,35,35,35,35,35,36,36,36,36,35,35,35,35,35,35,34,34,33,33,32,32,31,31,30,30,29,28,28,27,27,26,26,25,25,23,22,21,20,20,19,18,17,16,15,14,13,12,11,9,8,7,6,5,4,3,2,0,-1,-2,-3,-4,-5,-7,-8,-10,-11,-13,-14,-16,-18,-20,-22,-24,-25,-26,-27,-28,-29,-30,-31,-32,-34,-35,-37,-38,-39,-40,-41,-42,-44,-44,-45,-45,-46,-47,-48,-48,-49,-49,-49,-49,-49,-49,-50,-50,-50,-50,-51,-51,-52,-52,-53,-53,-54,-55,-55,-56,-56,-56,-57,-57,-58,-58,-59,-60,-60,-61,-61,-61,-62,-62,-63,-63,-64,-64,-63,-62,-61,-61,-60,-59,-58,-57,-56,-55,-54,-53,-53,-52,-51,-51,-50,-50,-49,-48,-47,-47,-46,-46,-45,-44,-44,-43,-42,-42,-41,-40,-40,-39,-38,-37,-36,-35,-35,-34,-33,-33,-32,-31,-31,-30,-29,-28,-28,-27,-26,-25,-25,-24,-23,-23,-22,-22,-21,-20,-20,-19,-18,-17,-17,-16,-16,-15,-14,-14,-13,-12,-11,-11,-10,-10,-9,-9,-8,-8,-7,-7,-6,-6,-5,-4,-3,-3,-2,-2,-1,0,0,1,2,2,3,4,5,5,6,6,7,7,8,9,10,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,25,26,28,29,30,32,34,36,37,39,40,41,43,45,47,49,49,50,51,51,52,53,53,54,54,54,55,56,56,57,58,58,59,59,60,60,61,61,61,62,63,63,63,64,64,65,66,66,66,66,66,66,66,66,67,67,67,67,68,68,68,69,69,69,69,69,69,70,70,70,70,71,71,71,71,71,71,71,71,71,71,71,72,72,72,72,72,72,73,73,73,73,74,74,74,74,74,74,74,74,74,74,74,74,74,74,74,73,73,73,73,73,73,73,72,72,72,72,72,72,72],"transitionWidth":80,"terrainScale":0.8},{"index":1,"width":800,"height":400,"terrainHeights":[42,42,42,42,42,42,41,41,41,40,40,39,38,37,37,37,36,36,35,35,34,34,34,34,34,34,34,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,32,32,32,32,32,32,32,32,32,32,32,32,32,32,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,30,30,30,30,30,30,30,30,30,30,30,30,30,29,29,29,29,29,29,28,28,28,28,28,27,27,27,27,26,26,26,26,26,26,26,26,26,26,25,25,25,25,25,25,25,25,25,25,25,24,24,24,24,23,23,23,23,23,23,22,22,22,22,22,22,21,21,21,21,21,21,20,20,20,20,20,19,19,19,19,19,18,18,18,18,18,17,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,15,15,15,15,15,15,15,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,13,13,12,12,12,12,12,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,10,10,10,10,10,9,9,9,9,8,8,8,8,7,7,7,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,2,2,2,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,10,10,10,10,10,11,11,11,11,11,11,12,12,12,12,12,12,12,13,13,13,13,13,14,14,14,14,14,14,15,15,15,15,15,15,16,16],"transitionWidth":80,"terrainScale":0.8}]
+    "chunks": [{"index":0,"width":800,"height":400,"terrainHeights":[20,21,22,23,24,25,25,26,26,26,27,27,28,29,29,30,30,31,31,32,32,33,33,34,34,35,35,35,36,36,36,37,37,38,38,38,39,39,39,40,40,41,41,41,42,42,43,43,44,45,45,46,46,46,47,47,48,48,48,48,49,50,50,51,51,52,52,52,52,52,53,53,53,54,54,55,55,55,55,56,56,57,57,57,58,58,59,60,60,60,61,61,62,62,62,63,63,63,64,63,63,63,63,62,62,61,61,60,60,60,59,58,58,57,57,56,56,55,54,54,53,52,51,50,49,48,48,47,47,46,45,44,43,42,41,40,39,38,37,35,34,32,30,28,26,25,24,22,21,19,17,16,14,12,10,9,7,6,5,3,1,-1,-3,-5,-7,-9,-10,-11,-12,-13,-15,-16,-17,-19,-20,-22,-23,-25,-26,-27,-28,-29,-30,-32,-33,-34,-35,-36,-37,-38,-39,-40,-41,-41,-42,-43,-43,-44,-45,-46,-46,-47,-48,-48,-49,-50,-50,-50,-51,-51,-52,-52,-53,-53,-54,-55,-55,-56,-56,-57,-57,-58,-59,-59,-59,-60,-60,-60,-61,-61,-62,-62,-63,-63,-64,-64,-64,-64,-65,-65,-64,-64,-64,-63,-63,-62,-61,-61,-60,-59,-58,-58,-57,-56,-56,-55,-55,-55,-54,-53,-52,-52,-51,-50,-50,-49,-49,-48,-48,-47,-47,-46,-46,-45,-44,-43,-43,-42,-42,-42,-41,-40,-40,-39,-39,-39,-38,-38,-37,-36,-36,-35,-35,-34,-33,-33,-32,-32,-31,-31,-30,-30,-30,-29,-28,-28,-27,-26,-26,-25,-24,-23,-22,-22,-21,-21,-20,-20,-19,-19,-18,-17,-17,-16,-16,-15,-15,-14,-14,-13,-13,-12,-11,-11,-10,-10,-9,-8,-7,-6,-6,-6,-5,-5,-5,-4,-4,-3,-2,-1,-1,0,0,1,1,2,3,3,4,5,5,6,6,7,7,7,8,8,9,9,9,9,10,10,10,11,11,12,13,13,14,14,14,15,15,15,16,16,17,17,18,18,18,19,19,19,20,21,21,22,23,24,24,25,25,25,26,26,27,27,28,28,29,30,30,31,31,32,32,33,33,34,35,35,35,35,35,36,36,36,36,35,35,35,35,35,35,34,34,33,33,32,32,31,31,30,30,29,28,28,27,27,26,26,25,25,23,22,21,20,20,19,18,17,16,15,14,13,12,11,9,8,7,6,5,4,3,2,0,-1,-2,-3,-4,-5,-7,-8,-10,-11,-13,-14,-16,-18,-20,-22,-24,-25,-26,-27,-28,-29,-30,-31,-32,-34,-35,-37,-38,-39,-40,-41,-42,-44,-44,-45,-45,-46,-47,-48,-48,-49,-49,-49,-49,-49,-49,-50,-50,-50,-50,-51,-51,-52,-52,-53,-53,-54,-55,-55,-56,-56,-56,-57,-57,-58,-58,-59,-60,-60,-61,-61,-61,-62,-62,-63,-63,-64,-64,-63,-62,-61,-61,-60,-59,-58,-57,-56,-55,-54,-53,-53,-52,-51,-51,-50,-50,-49,-48,-47,-47,-46,-46,-45,-44,-44,-43,-42,-42,-41,-40,-40,-39,-38,-37,-36,-35,-35,-34,-33,-33,-32,-31,-31,-30,-29,-28,-28,-27,-26,-25,-25,-24,-23,-23,-22,-22,-21,-20,-20,-19,-18,-17,-17,-16,-16,-15,-14,-14,-13,-12,-11,-11,-10,-10,-9,-9,-8,-8,-7,-7,-6,-6,-5,-4,-3,-3,-2,-2,-1,0,0,1,2,2,3,4,5,5,6,6,7,7,8,9,10,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,25,26,28,29,30,32,34,36,37,39,40,41,43,45,47,49,49,50,51,51,52,53,53,54,54,54,55,56,56,57,58,58,59,59,60,60,61,61,61,62,63,63,63,64,64,65,66,66,66,66,66,66,66,66,67,67,67,67,68,68,68,69,69,69,69,69,69,70,70,70,70,71,71,71,71,71,71,71,71,71,71,71,72,72,72,72,72,72,73,73,73,73,74,74,74,74,74,74,74,74,74,74,74,74,74,74,74,73,73,73,73,73,73,73,72,72,72,72,72,72,72],"transitionWidth":80,"terrainScale":0.8},{"index":1,"width":800,"height":400,"terrainHeights":[42,42,42,42,42,42,41,41,41,40,40,39,38,37,37,37,36,36,35,35,34,34,34,34,34,34,34,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,32,32,32,32,32,32,32,32,32,32,32,32,32,32,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,30,30,30,30,30,30,30,30,30,30,30,30,30,29,29,29,29,29,29,28,28,28,28,28,27,27,27,27,26,26,26,26,26,26,26,26,26,26,25,25,25,25,25,25,25,25,25,25,25,24,24,24,24,23,23,23,23,23,23,22,22,22,22,22,22,21,21,21,21,21,21,20,20,20,20,20,19,19,19,19,19,18,18,18,18,18,17,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,15,15,15,15,15,15,15,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,13,13,12,12,12,12,12,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,10,10,10,10,10,9,9,9,9,8,8,8,8,7,7,7,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,2,2,2,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,10,10,10,10,10,11,11,11,11,11,11,12,12,12,12,12,12,12,13,13,13,13,13,14,14,14,14,14,14,15,15,15,15,15,15,16,16],"transitionWidth":80,"terrainScale":0.8},{"index":2,"width":800,"height":400,"terrainHeights":[32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,31,31,31,31,31,31,31,30,30,30,30,30,30,30,30,29,29,29,29,29,29,29,29,29,30,30,30,30,30,30,29,29,29,29,29,29,28,28,28,28,28,28,27,27,27,27,26,26,25,24,24,23,23,23,22,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,22,22,22,23,24,24,24,25,26,26,26,27,27,28,28,29,29,30,30,31,31,32,33,34,34,34,35,36,37,37,38,39,40,41,41,42,43,44,45,48,125,125,125,125,125,125,125,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,123,123,122,122,122,122,122,122,121,121,121,120,120,120,119,119,119,118,118,118,118,117,117,117,117,117,117,117,117,118,118,118,118,119,119,119,119,119,119,119,119,119,119,119,119,120,120,120,120,120,120,120,120,120,121,121,121,121,122,122,122,123,123,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,124,123,123,63,52,47,43,40,35,34,32,29,26,22,20,18,17,15,13,11,8,7,4,2,1,-1,-3,-4,-4,-5,-5,-6,-7,-8,-8,-9,-9,-10,-10,-11,-11,-12,-13,-13,-14,-14,-15,-15,-16,-16,-17,-17,-17,-18,-18,-19,-19,-19,-19,-19,-20,-20,-21,-21,-21,-21,-22,-22,-22,-23,-23,-23,-23,-24,-24,-24,-24,-25,-25,-25,-26,-26,-27,-27,-28,-28,-28,-30,-31,-32,-32,-33,-34,-34,-35,-35,-36,-38,-39,-40,-42,-43,-45,-46,-47,-48,-50,-52,-53,-54,-54,-56,-57,-58,-59,-60,-61,-61,-62,-63,-64,-65,-65,-66,-66,-66,-66,-66,-66,-66,-66,-66,-66,-66,-66,-66,-66,-66,-66,-66,-66,-65,-65,-64,-64,-63,-63,-63,-62,-62,-61,-61,-60,-60,-59,-59,-59,-58,-58,-58,-57,-57,-56,-56,-55,-55,-55,-54,-54,-54,-53,-53,-52,-52,-51,-51,-51,-50,-50,-50,-49,-49,-48,-48,-47,-47,-46,-46,-46,-45,-45,-44,-44,-44,-43,-42,-42,-41,-40,-40,-39,-37,-36,-35,-35,-34,-33,-31,-29,-27,-25,-23,-22,-20,-17,-15,-14,-13,-12,-11,-9,-7,-6,-5,-4,-3,-1,-1,0,1,2,3,4,5,6,6,7,8,9,10,11,12,12,13,14,16,17,18,18,19,19,20,21,22,23,24,25,25,26,27,28,28,29,30,31,32,34,35,36,36,37,39,40,41,42,43,44,46,48,49,50,51,51,52,53,53,53,54,54,55,55,55,56,56,56,57,58,58,58,58,59,60,60,61,62,62,62,62,63,63,63,64,64,65,65,65,65,66,66,67,67,67,67,68,68,69,69,69,69,69,69,69,69,69,69,69,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,70,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,71,72,72,72,72,72,72,73,73,73,73,73,73,73,74,74,74,74,74,74,74,75,75,75,75,76,76,76,76,76,76,76,76,77,77,77,77,77,77,77,77],"transitionWidth":80,"terrainScale":0.8}]
 };
 
 // Terrain Generator - Handles chunk selection and sequencing at game load
@@ -193,15 +193,19 @@ class TerrainGenerator {
         const obstacles = [];
         const leaves = [];
         
-        // Only generate if rendering is enabled
+        // Generate obstacles and leaves based on rendering flag
+        console.log(`Generating obstacles and leaves (renderObstacles: ${game.renderObstacles})`);
         if (!game.renderObstacles) {
             console.log('Obstacle rendering disabled - skipping obstacle/leaf generation');
             return { obstacles, leaves };
         }
         
         console.log('Pre-generating obstacles and leaves for terrain...');
+        console.log(`Processing ${this.generatedSequence.length} chunks for obstacle/leaf generation`);
         
-        this.generatedSequence.forEach(chunk => {
+        this.generatedSequence.forEach((chunk, index) => {
+            console.log(`Chunk ${index}: type=${chunk.type}, width=${chunk.width}`);
+            
             // Generate obstacles for this chunk
             this.generateChunkObstacles(chunk, obstacles, game);
             
@@ -210,13 +214,20 @@ class TerrainGenerator {
         });
         
         console.log(`Generated ${obstacles.length} obstacles and ${leaves.length} leaves`);
+        console.log('Sample obstacles:', obstacles.slice(0, 3));
+        console.log('Sample leaves:', leaves.slice(0, 3));
         return { obstacles, leaves };
     }
     
     // Generate obstacles for a specific chunk
     generateChunkObstacles(chunk, obstacles, game) {
-        // Skip obstacle generation for flat chunks or if disabled
-        if (chunk.type === 'flat') return;
+        console.log(`Generating obstacles for chunk ${chunk.index} (type: ${chunk.type})`);
+        
+        // Skip obstacle generation for the first chunk to keep player start area clear
+        if (chunk.index === 0) {
+            console.log(`Skipping obstacle generation for first chunk ${chunk.index} - keeping start area clear`);
+            return;
+        }
         
         // Use seeded random for consistent obstacle placement
         const chunkSeed = this.seed + chunk.index * 1000;
@@ -227,8 +238,8 @@ class TerrainGenerator {
             return obstacleRandom / 233280;
         };
         
-        // Generate 3-8 obstacles per terrain chunk
-        const obstacleCount = Math.floor(seededObstacleRandom() * 6) + 3;
+        // Generate 0-4 obstacles per chunk (both flat and terrain chunks)
+        const obstacleCount = Math.floor(seededObstacleRandom() * 5);
         
         for (let i = 0; i < obstacleCount; i++) {
             // Random position within chunk (avoid edges for smooth transitions)
@@ -240,24 +251,30 @@ class TerrainGenerator {
             let obstacle;
             
             if (obstacleType === 0) {
-                // Large boulder
-                obstacle = { x, width: 60, height: 80, shape: 'boulder' };
+                // Small rock
+                obstacle = { x, width: 16, height: 24, type: 0 };
             } else if (obstacleType === 1) {
                 // Medium rock
-                obstacle = { x, width: 40, height: 60, shape: 'rock' };
+                obstacle = { x, width: 24, height: 32, type: 1 };
             } else if (obstacleType === 2) {
-                // Small stone cluster
-                obstacle = { x, width: 30, height: 40, shape: 'stones' };
+                // Wide but short rock
+                obstacle = { x, width: 36, height: 20, type: 2 };
             } else if (obstacleType === 3) {
-                // Tall spire
-                obstacle = { x, width: 25, height: 100, shape: 'spire' };
+                // Tall but narrow rock
+                obstacle = { x, width: 16, height: 36, type: 3 };
             } else {
-                // Wide barrier
-                obstacle = { x, width: 80, height: 50, shape: 'barrier' };
+                // Super wide rock
+                obstacle = { x, width: 64, height: 24, type: 4 };
             }
             
-            // Position on ground
-            obstacle.y = game.terrainChunkManager.getTerrainYAtWorldX(obstacle.x) - obstacle.height;
+            // Position obstacle bottom edge to match floor collision detection
+            // Store the obstacle without Y position first
+            obstacle.y = 0; // Temporary value
+            
+            // After terrain is loaded, we'll reposition obstacles to match floor collision
+            // For now, use fallback positioning
+            const terrainY = game.getCurrentGroundY(obstacle.x);
+            obstacle.y = terrainY - obstacle.height;
             obstacle.passed = false;
             obstacle.chunkIndex = chunk.index;
             
@@ -267,6 +284,8 @@ class TerrainGenerator {
     
     // Generate leaves for a specific chunk
     generateChunkLeaves(chunk, leaves, game) {
+        console.log(`Generating leaves for chunk ${chunk.index} (type: ${chunk.type})`);
+        
         // Use seeded random for consistent leaf placement
         const chunkSeed = this.seed + chunk.index * 2000;
         let leafRandom = chunkSeed;
@@ -276,13 +295,13 @@ class TerrainGenerator {
             return leafRandom / 233280;
         };
         
-        // Generate 2-5 leaves per chunk
-        const leafCount = Math.floor(seededLeafRandom() * 4) + 2;
+        // Generate 0-2 leaves per chunk randomly
+        const leafCount = Math.floor(seededLeafRandom() * 3);
         
         for (let i = 0; i < leafCount; i++) {
             // Random position within chunk
             const x = chunk.startX + seededLeafRandom() * chunk.width;
-            const groundY = game.terrainChunkManager.getTerrainYAtWorldX(x);
+            const groundY = game.getCurrentGroundY(x);
             
             const leaf = {
                 x: x,
@@ -344,6 +363,7 @@ class TerrainChunkManager {
             this.loadGeneratedSequence(generatedSequence);
             
             // Pre-generate obstacles and leaves
+            console.log(`Obstacle rendering flag: ${this.game.renderObstacles}`);
             const preGenerated = this.terrainGenerator.generateObstaclesAndLeaves(this.game);
             this.preGeneratedObstacles = preGenerated.obstacles;
             this.preGeneratedLeaves = preGenerated.leaves;
@@ -408,11 +428,11 @@ class TerrainChunkManager {
             return this.game.getCurrentGroundY(worldX);
         }
         
-        // Check if player has reached the end of terrain (game over condition)
+        // Check if player has reached the end of terrain (victory condition)
         if (worldX >= this.totalChunkWidth) {
             if (!this.isGameOver) {
                 this.isGameOver = true;
-                console.log('Player reached end of terrain - triggering game over');
+                console.log(`Player reached end of terrain at x=${worldX}, totalWidth=${this.totalChunkWidth} - triggering victory`);
                 this.game.triggerVictory();
             }
             return this.game.getCurrentGroundY(worldX);
@@ -651,12 +671,12 @@ class RockClimbingGame {
             duration: 60 // frames for smooth transition
         };
         
-        // Terrain chunk management system
-        this.terrainChunkManager = new TerrainChunkManager(this);
-        
-        // Debug flags
+        // Debug flags - set these BEFORE creating terrain manager
         this.renderObstacles = true; // Set to false to hide obstacles for debugging
         this.enableObstacleCollision = true; // Set to false to disable obstacle collision for debugging
+        
+        // Terrain chunk management system
+        this.terrainChunkManager = new TerrainChunkManager(this);
         
         // Initialize with pre-generated obstacles and leaves
         this.initializePreGeneratedContent();
@@ -675,6 +695,11 @@ class RockClimbingGame {
                 this.obstacles = this.terrainChunkManager.getPreGeneratedObstacles();
                 this.leaves = this.terrainChunkManager.getPreGeneratedLeaves();
                 console.log(`Loaded ${this.obstacles.length} pre-generated obstacles and ${this.leaves.length} pre-generated leaves`);
+                console.log('First few obstacles:', this.obstacles.slice(0, 3));
+                console.log('First few leaves:', this.leaves.slice(0, 3));
+                
+                // Reposition obstacles to match floor collision detection
+                this.repositionObstaclesToFloor();
                 
                 // Position player on the terrain at starting position
                 this.positionPlayerOnTerrain();
@@ -686,12 +711,37 @@ class RockClimbingGame {
         checkTerrain();
     }
     
-    // Position player correctly on the terrain surface
+    // Reposition obstacles to match exact floor collision detection
+    repositionObstaclesToFloor() {
+        this.obstacles.forEach(obstacle => {
+            // Use the same method as floor collision detection
+            const worldX = obstacle.x;
+            const floorY = this.terrainChunkManager.getTerrainYAtWorldX(worldX);
+            
+            // Position obstacle to overlap floor slightly for better visual grounding
+            // Allow 4px overlap into the ground for solid appearance
+            obstacle.y = floorY - obstacle.height + 4;
+            
+            // Remove any floating properties that might be applied from leaf logic
+            delete obstacle.floatOffset;
+            delete obstacle.floatSpeed;
+            delete obstacle.collected;
+        });
+        console.log('Repositioned obstacles to be static and grounded');
+    }
+    
+    // Position player on the terrain surface at starting position
     positionPlayerOnTerrain() {
-        const terrainY = this.terrainChunkManager.getTerrainYAtWorldX(this.player.x);
-        this.player.y = terrainY - this.player.height;
-        this.player.targetY = this.player.y;
-        console.log(`Positioned player at x:${this.player.x}, y:${this.player.y} (terrain y: ${terrainY})`);
+        const startX = 100; // Starting position
+        const groundY = this.terrainChunkManager.getTerrainYAtWorldX(startX);
+        
+        this.player.x = startX;
+        this.player.y = groundY - this.player.height;
+        this.player.velocityY = 0;
+        this.player.isOnGround = true;
+        
+        console.log(`Player positioned at (${this.player.x}, ${this.player.y}) on terrain height ${groundY}`);
+        console.log(`Game state: ${this.gameState}, terrain end at: ${this.terrainChunkManager.totalChunkWidth}`);
     }
     
     // Trigger victory when player reaches end of terrain
@@ -1763,11 +1813,9 @@ class RockClimbingGame {
         
         // Dynamic leaf generation removed - using pre-generated leaves
         
-        // Update obstacles - only move when goat is airborne
-        const obstacleScrollSpeed = this.player.state === 'airborne' ? this.player.velocityX : 0;
+        // Update obstacles - obstacles are stationary world objects, no movement needed
+        // Only check for scoring and cleanup based on camera position
         this.obstacles = this.obstacles.filter(obstacle => {
-            obstacle.x -= obstacleScrollSpeed;
-            
             // Check if player passed obstacle (for scoring and terrain elevation)
             if (!obstacle.passed && obstacle.x + obstacle.width < this.player.x) {
                 obstacle.passed = true;
@@ -1775,17 +1823,17 @@ class RockClimbingGame {
                 this.checkTerrainElevation();
             }
             
-            return obstacle.x + obstacle.width > 0;
+            // Keep obstacles that are still visible on screen (with some margin for off-screen)
+            return obstacle.x + obstacle.width > this.camera.x - 100;
         });
         
-        // Update leaves - only move when goat is airborne
+        // Update leaves - leaves are also stationary world objects, only update floating animation
         this.leaves = this.leaves.filter(leaf => {
-            leaf.x -= obstacleScrollSpeed * 0.8; // Leaves move slightly slower than obstacles
-            
-            // Update floating animation
+            // Update floating animation for visual effect
             leaf.floatOffset += leaf.floatSpeed;
             
-            return leaf.x + leaf.width > 0 && !leaf.collected;
+            // Keep leaves that are still visible on screen (with some margin for off-screen)
+            return leaf.x + leaf.width > this.camera.x - 100 && !leaf.collected;
         });
         
         // Collision detection
@@ -1805,10 +1853,15 @@ class RockClimbingGame {
         // Check obstacle collisions
         if (this.enableObstacleCollision) {
             for (let obstacle of this.obstacles) {
+                // Use dynamic terrain positioning for collision detection
+                const terrainY = this.getCurrentGroundY(obstacle.x);
+                const obstacleY = terrainY - obstacle.height; // Same positioning as rendering
+                
                 if (playerRect.x < obstacle.x + obstacle.width &&
                     playerRect.x + playerRect.width > obstacle.x &&
-                    playerRect.y < obstacle.y + obstacle.height &&
-                    playerRect.y + playerRect.height > obstacle.y) {
+                    playerRect.y < obstacleY + obstacle.height &&
+                    playerRect.y + playerRect.height > obstacleY) {
+                    console.log('Obstacle collision detected:', obstacle);
                     this.gameState = 'gameOver';
                     this.music.pause();
                     this.music.currentTime = 0;
@@ -2132,8 +2185,12 @@ class RockClimbingGame {
         if (this.renderObstacles) {
             ctx.fillStyle = '#000000';
             this.obstacles.forEach(obstacle => {
+            // Dynamically position obstacle on terrain for proper grounding
+            const terrainY = this.getCurrentGroundY(obstacle.x);
+            const groundedY = terrainY - obstacle.height;
+            
             const ox = Math.floor((obstacle.x - this.camera.x) / 2) * 2;
-            const oy = Math.floor((obstacle.y - this.camera.y) / 2) * 2;
+            const oy = Math.floor((groundedY - this.camera.y) / 2) * 2;
             
             // Draw different rock shapes based on obstacle type
             switch(obstacle.type) {
