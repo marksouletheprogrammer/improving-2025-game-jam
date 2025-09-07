@@ -674,7 +674,7 @@ class RockClimbingGame {
             // Use mouse-selected angle for directional jump mechanics
             const jumpAngle = this.player.aimAngle;
             // Calculate base power with power level multiplier
-            const basePowerRaw = Math.random() * (this.jumpPowerMax - this.jumpPowerMin) + this.jumpPowerMin;
+            const basePowerRaw = (this.jumpPowerMax + this.jumpPowerMin)/2;
             let powerMultiplier = 1.0;
             
             // Apply power level scaling
