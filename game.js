@@ -1,15 +1,6 @@
 // TERRAIN_DATA_PLACEHOLDER - Replace this line with: const TERRAIN_DATA = [JSON data from chunk analyzer];
 const TERRAIN_DATA = {
-    "chunks": [
-      {
-        "index": 0,
-        "width": 800,
-        "height": 400,
-        "terrainHeights": [-16, -13, -10, -6, -3, 1, 4, 8, 11, 14, 18, 21, 25, 28, 31, 34, 37, 40, 43, 46, 48, 50, 52, 54, 56, 58, 59, 60, 61, 62, 63, 63, 64, 64, 64, 64, 64, 63, 63, 62, 61, 60, 59, 58, 58, 57, 56, 55, 54, 54, 53, 53, 52, 52, 52, 52, 52, 52, 52, 52, 53, 53, 54, 54, 55, 56, 57, 58, 58, 59, 60, 61, 61, 62, 63, 63, 64, 64, 64, 64, 64, 63, 63, 62, 61, 60, 59, 58, 56, 54, 52, 50, 48, 46, 43, 40, 37, 34, 31, 28, 25, 21, 18, 14, 11, 8, 4, 1, -3, -6, -10, -13, -16, -19, -22, -25, -28, -31, -34, -37, -40, -42, -45, -48, -50, -53, -55, -57, -59, -61, -63, -65, -66, -67, -68, -69, -69, -70, -70, -70, -70, -69, -69, -68, -67, -66, -65, -64, -63, -62, -60, -59, -57, -56, -55, -53, -52, -51, -50, -49, -48, -47, -46, -45, -45, -45, -45, -44, -45, -45, -45, -46, -47, -47, -48, -50, -51, -52, -54, -55, -57, -58, -60, -61, -63, -65, -66, -68, -69, -71, -72, -74, -75, -76, -77, -78, -78, -79, -79, -79, -80, -80, -79, -79, -79, -78, -77, -77, -76, -75, -73, -72, -71, -70, -68, -67, -66, -64, -63, -62, -60, -59, -58, -57, -56, -55, -54, -53, -53, -52, -52, -52, -52, -52, -52, -52, -52, -53, -53, -54, -54, -55, -56, -57, -58, -58, -59, -60, -61, -61, -62, -63, -63, -64, -64, -64, -64, -64, -63, -63, -62, -61, -60, -59, -58, -56, -54, -52, -50, -48, -46, -43, -40, -37, -34, -31, -28, -25, -21, -18, -14, -11, -8, -4, -1, 2, 5, 8, 11, 13, 16, 19, 22, 24, 27, 29, 32, 34, 36, 38, 40, 41, 43, 44, 45, 46, 47, 47, 48, 48, 48, 48, 47, 47, 46, 45, 44, 43, 42, 40, 39, 37, 36, 34, 32, 30, 29, 27, 25, 24, 22, 20, 19, 18, 16, 15, 14, 13, 12, 11, 11, 10, 10, 9, 9, 9, 9, 10, 10, 10, 11, 11, 12, 12, 13, 13, 14, 15, 15, 16, 16, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 17, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6, 5, 4, 2, 1, 0, -2, -3, -4, -5, -6, -6, -7, -7, -8, -8, -8, -8, -7, -7, -6, -5, -4, -3, -1, 1, 3, 5, 7, 9, 11, 14, 17, 19, 22, 25, 28, 31, 34, 37, 40, 42, 45, 48, 50, 53, 55, 57, 59, 61, 63, 65, 66, 67, 68, 69, 69, 70, 70, 70, 70, 69, 69, 68, 67, 66, 65, 64, 63, 62, 60, 59, 57, 56, 55, 53, 52, 51, 50, 49, 48, 47, 46, 45, 45, 45, 45, 44, 45, 45, 45, 46, 47, 47, 48, 50, 51, 52, 54, 55, 57, 58, 60, 61, 63, 65, 66, 68, 69, 71, 72, 74, 75, 76, 77, 78, 78, 79, 79, 79, 80, 80, 79, 79, 79, 78, 77, 77, 76, 75, 73, 72, 71, 70, 68, 67, 66, 64, 63, 62, 60, 59, 58, 57, 56, 55, 54, 53, 53, 52, 52, 52, 52, 52, 52, 52, 52, 53, 53, 54, 54, 55, 56, 57, 58, 58, 59, 60, 61, 61, 62, 63, 63, 64, 64, 64, 64, 64, 63, 63, 62, 61, 60, 59, 58, 56, 54, 52, 50, 48, 46, 43, 40, 37, 34, 31, 28, 25, 21, 18, 14, 11, 8, 4, 1, -3, -6, -10, -13, -16, -19, -22, -25, -27, -29, -31, -33, -35, -37, -39, -41, -43, -45, -47, -48, -50, -52, -54, -56, -58, -60, -62, -63, -65, -67, -69, -70, -72, -73, -75, -76, -77, -79, -80, -81, -82, -83, -84, -84, -85, -85, -86, -86, -86, -87, -87, -87, -87, -87, -86, -86, -86, -86, -85, -85, -84, -84, -83, -83, -82, -82, -81, -81, -80, -80, -80, -79, -79, -79, -79, -78, -78, -78, -78, -78, -78, -79, -79, -79, -79, -80, -80, -81, -81, -81, -82, -82, -83, -83, -83, -84, -84, -84, -85, -85, -85, -85, -85, -85, -85, -84, -84, -84, -83, -82, -82, -81, -80, -79, -78, -77, -76, -75, -74, -73, -71, -70, -69, -67, -66, -65, -63, -62, -61, -59, -58, -57, -56, -55, -54, -53, -52, -51, -50, -49, -49, -48, -47, -47, -47, -46, -46, -45, -45, -45, -44, -44, -44, -43, -43, -42, -42, -41, -41, -40, -39, -38, -37, -36, -35, -34, -32, -31, -29, -27, -25, -23, -21, -19, -17, -14, -12, -9, -6, -4, -1, 2, 5, 8, 11, 13, 16, 19, 22, 24, 27, 29, 32, 34, 36, 38, 40, 41, 43, 44, 45, 46, 47, 47, 48, 48, 48, 48, 47, 47, 46, 45, 44, 43, 42, 40, 39, 37, 36, 34, 32, 30, 29, 27, 25, 24, 22, 20, 19, 18, 16, 15, 14, 13, 12, 11, 11, 10, 10, 9, 9, 9, 9, 10, 10, 10, 11, 11, 12, 12, 13, 13, 14, 15, 15, 16, 16, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 17, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6, 5, 4, 2, 1, 0, -2, -3, -4, -5, -6, -6, -7, -7, -8, -8, -8, -8, -7, -7, -6, -5, -4, -3, -1, 1, 3, 5, 7, 9, 11, 14, 17, 19, 22, 25, 28, 31, 34, 37, 40, 42, 45, 48, 50, 53, 55, 57, 59, 61, 63, 65, 66, 67, 68, 69, 69, 70, 70, 70, 70, 69, 69, 68, 67, 66, 65, 64, 63, 62, 60, 59, 57, 56, 55, 53, 52, 51, 50, 49, 48, 47, 46, 45, 45, 45, 45, 44, 45, 45, 45, 46, 47, 47, 48, 50, 51, 52, 54, 55, 57, 58, 60, 61, 63, 65, 66, 68, 69, 71, 72, 74, 75, 76, 77, 78, 78, 79, 79, 79, 80, 80, 79, 79, 79, 78, 77, 77, 76, 75, 73, 72, 71, 70, 68, 67, 66, 64, 63, 62, 60, 59, 58, 57, 56, 55, 54, 53, 53, 52, 52, 52, 52, 52, 52, 52, 52, 53, 53, 54, 54, 55, 56, 57, 58, 58, 59, 60, 61, 61, 62, 63, 63, 64, 64, 64, 64, 64, 63, 63, 62, 61, 60, 59, 58, 56, 54, 52, 50, 48, 46, 43, 40, 37, 34, 31, 28, 25, 21, 18, 14, 11, 8, 4, 1, -3, -6, -10, -13, -16],
-        "transitionWidth": 80,
-        "terrainScale": 0.8
-      }
-    ]
+    "chunks": [{"index":0,"width":800,"height":400,"terrainHeights":[42,42,42,42,42,42,41,41,41,40,40,39,38,37,37,37,36,36,35,35,34,34,34,34,34,34,34,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,32,32,32,32,32,32,32,32,32,32,32,32,32,32,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,30,30,30,30,30,30,30,30,30,30,30,30,30,29,29,29,29,29,29,28,28,28,28,28,27,27,27,27,26,26,26,26,26,26,26,26,26,26,25,25,25,25,25,25,25,25,25,25,25,24,24,24,24,23,23,23,23,23,23,22,22,22,22,22,22,21,21,21,21,21,21,20,20,20,20,20,19,19,19,19,19,18,18,18,18,18,17,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,15,15,15,15,15,15,15,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,13,13,12,12,12,12,12,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,10,10,10,10,10,9,9,9,9,8,8,8,8,7,7,7,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,2,2,2,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,10,10,10,10,10,11,11,11,11,11,11,12,12,12,12,12,12,12,13,13,13,13,13,14,14,14,14,14,14,15,15,15,15,15,15,16,16],"transitionWidth":80,"terrainScale":0.8}]
   };
   
 // Terrain Chunk Management System
@@ -580,6 +571,104 @@ class RockClimbingGame {
         }
     }
     
+    // Draw heavy salt and pepper particle texture on ground surface
+    drawGroundParticleTexture(ctx) {
+        const particleSize = 1; // Small particles for salt and pepper effect
+        const density = 0.3; // How dense the particles are
+        
+        for (let x = this.groundOffset; x < this.canvas.width + 50; x += 2) {
+            const worldX = x + this.camera.x;
+            const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
+            
+            // Create particles only below the ground surface (in the gradient area)
+            for (let offsetY = 2; offsetY <= 50; offsetY += 1) {
+                const currentY = groundY + offsetY;
+                
+                // Use deterministic pseudo-random for consistent texture
+                const seed = (worldX * 37 + offsetY * 19) % 1000;
+                const random1 = (seed * 9301 + 49297) % 233280 / 233280;
+                const random2 = ((seed + 1) * 9301 + 49297) % 233280 / 233280;
+                const random3 = ((seed + 2) * 9301 + 49297) % 233280 / 233280;
+                
+                // Skip particles based on density
+                if (random1 > density) continue;
+                
+                // Stop particles at bottom of screen
+                if (currentY >= this.canvas.height) break;
+                
+                // Vary particle density based on distance from ground surface
+                // Very dense near floor line, very sparse near bottom
+                const distanceFromGround = offsetY;
+                const densityFalloff = Math.max(0.01, Math.pow(1 - (distanceFromGround / 50), 4));
+                if (random2 > densityFalloff) continue;
+                
+                // Create varied grayscale particles with randomized color and opacity
+                let grayValue;
+                if (random3 < 0.3) {
+                    // Dark particles (pepper)
+                    grayValue = Math.floor(10 + random1 * 40); // 10-50 range
+                } else if (random3 < 0.6) {
+                    // Medium gray particles
+                    grayValue = Math.floor(60 + random2 * 60); // 60-120 range
+                } else {
+                    // Light particles (salt)
+                    grayValue = Math.floor(150 + random3 * 80); // 150-230 range
+                }
+                
+                // Add random variation to the gray color
+                const colorVariation = 30;
+                const finalGray = Math.max(0, Math.min(255, grayValue + (random1 - 0.5) * colorVariation));
+                const grayHex = Math.floor(finalGray).toString(16).padStart(2, '0');
+                
+                // Randomize opacity (0.2 to 1.0)
+                const opacity = 0.2 + (random2 * 0.8);
+                
+                ctx.fillStyle = `rgba(${Math.floor(finalGray)}, ${Math.floor(finalGray)}, ${Math.floor(finalGray)}, ${opacity})`;
+                
+                // Create irregular particle shapes
+                const shapeType = random1;
+                if (shapeType < 0.4) {
+                    // Irregular small clusters
+                    ctx.fillRect(x, currentY, 1, 1);
+                    if (random2 > 0.5) ctx.fillRect(x + 1, currentY, 1, 1);
+                    if (random3 > 0.7) ctx.fillRect(x, currentY + 1, 1, 1);
+                } else if (shapeType < 0.7) {
+                    // L-shaped particles
+                    ctx.fillRect(x, currentY, 2, 1);
+                    ctx.fillRect(x, currentY + 1, 1, 1);
+                } else if (shapeType < 0.85) {
+                    // Cross-shaped particles
+                    ctx.fillRect(x, currentY, 1, 1);
+                    if (random2 > 0.3) ctx.fillRect(x + 1, currentY, 1, 1);
+                    if (random3 > 0.3) ctx.fillRect(x, currentY + 1, 1, 1);
+                    if (random1 > 0.6) ctx.fillRect(x - 1, currentY, 1, 1);
+                } else {
+                    // Scattered dots
+                    ctx.fillRect(x, currentY, 1, 1);
+                    if (random2 > 0.8) ctx.fillRect(x + 2, currentY + 1, 1, 1);
+                }
+            }
+        }
+    }
+
+    // Draw gradient from terrain line to bottom of screen (black to white)
+    drawUndergroundGradient(ctx) {
+        const segmentWidth = 4;
+        
+        for (let x = 0; x < this.canvas.width; x += segmentWidth) {
+            const worldX = x + this.camera.x;
+            const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
+            
+            // Create vertical gradient from ground to bottom of screen
+            const gradient = ctx.createLinearGradient(0, groundY, 0, this.canvas.height);
+            gradient.addColorStop(0, '#202020'); // Very dark gray at terrain line
+            gradient.addColorStop(1, '#FFFFFF'); // White at bottom
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, groundY, segmentWidth, this.canvas.height - groundY);
+        }
+    }
+
     // Draw all mountain layers with parallax effect (triangular mountains)
     drawMountains(ctx) {
         const elevationOffset = Math.min(this.totalDistance * this.inclineRate * 0.3, this.maxInclination * 0.3);
@@ -1534,11 +1623,50 @@ class RockClimbingGame {
             ctx.fillRect(x + 2, groundY1 - 2, 16, 2);
         }
         
-        // Add rocky texture details on visible terrain
+        // Draw gradient from terrain line to bottom of screen
+        this.drawUndergroundGradient(ctx);
+        
+        // Draw heavy salt and pepper particle texture on ground
+        this.drawGroundParticleTexture(ctx);
+        
+        // Add rocky texture details on visible terrain with dark grayscale and random colors
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += 45) {
             const worldX = x + this.camera.x;
             const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
+            
+            // Use deterministic pseudo-random for consistent texture
+            const seed = (worldX * 23) % 1000;
+            const random1 = (seed * 9301 + 49297) % 233280 / 233280;
+            const random2 = ((seed + 1) * 9301 + 49297) % 233280 / 233280;
+            const random3 = ((seed + 2) * 9301 + 49297) % 233280 / 233280;
+            
+            // Dark grayscale base (20-80 range)
+            const baseGray = Math.floor(20 + random1 * 60);
+            
+            // Add subtle random color tint
+            const colorVariation = 15; // How much color variation to add
+            const r = Math.max(0, Math.min(255, baseGray + (random2 - 0.5) * colorVariation));
+            const g = Math.max(0, Math.min(255, baseGray + (random3 - 0.5) * colorVariation));
+            const b = Math.max(0, Math.min(255, baseGray + (random1 - 0.5) * colorVariation));
+            
+            const rHex = Math.floor(r).toString(16).padStart(2, '0');
+            const gHex = Math.floor(g).toString(16).padStart(2, '0');
+            const bHex = Math.floor(b).toString(16).padStart(2, '0');
+            
+            ctx.fillStyle = `#${rHex}${gHex}${bHex}`;
             ctx.fillRect(x + 10, groundY - 6, 8, 6);
+            
+            // Second texture element with different color
+            const baseGray2 = Math.floor(20 + random2 * 60);
+            const r2 = Math.max(0, Math.min(255, baseGray2 + (random3 - 0.5) * colorVariation));
+            const g2 = Math.max(0, Math.min(255, baseGray2 + (random1 - 0.5) * colorVariation));
+            const b2 = Math.max(0, Math.min(255, baseGray2 + (random2 - 0.5) * colorVariation));
+            
+            const r2Hex = Math.floor(r2).toString(16).padStart(2, '0');
+            const g2Hex = Math.floor(g2).toString(16).padStart(2, '0');
+            const b2Hex = Math.floor(b2).toString(16).padStart(2, '0');
+            
+            ctx.fillStyle = `#${r2Hex}${g2Hex}${b2Hex}`;
             ctx.fillRect(x + 25, groundY - 4, 6, 4);
         }
         

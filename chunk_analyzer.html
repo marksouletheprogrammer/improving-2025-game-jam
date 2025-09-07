@@ -272,18 +272,16 @@
             `;
             
             const jsonOutput = document.getElementById('jsonOutput');
-            const terrainData = {
-                chunks: processedChunks.map(chunk => ({
-                    index: chunk.index,
-                    width: chunk.width,
-                    height: chunk.height,
-                    terrainHeights: chunk.terrainHeights,
-                    transitionWidth: chunk.transitionWidth,
-                    terrainScale: chunk.terrainScale
-                }))
-            };
+            const terrainData = processedChunks.map(chunk => ({
+                index: chunk.index,
+                width: chunk.width,
+                height: chunk.height,
+                terrainHeights: chunk.terrainHeights,
+                transitionWidth: chunk.transitionWidth,
+                terrainScale: chunk.terrainScale
+            }));
             
-            jsonOutput.textContent = JSON.stringify(terrainData, null, 2);
+            jsonOutput.textContent = JSON.stringify(terrainData);
             jsonOutput.style.display = 'block';
         }
         
