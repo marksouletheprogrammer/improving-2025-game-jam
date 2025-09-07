@@ -1,4 +1,4 @@
-﻿class RockClimbingGame {
+class RockClimbingGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
@@ -33,10 +33,13 @@
         
         // Camera system
         this.camera = {
+            x: 0, // Current camera X offset
             y: 0, // Current camera Y offset
+            targetX: 0, // Target camera X position
             targetY: 0, // Target camera Y position
             smoothing: 0.1, // Camera smoothing factor (0.1 = smooth, 1.0 = instant)
-            threshold: this.canvas.height * 0.5 // Trigger camera movement when player above 50% height
+            threshold: this.canvas.height * 0.5, // Trigger camera movement when player above 50% height
+            fixedScreenX: 150 // Fixed screen position for goat (pixels from left)
         };
         
         // Player (Mountain Goat)
@@ -45,16 +48,37 @@
             y: this.baseGroundY - 50,
             width: 40,
             height: 50,
+            velocityX: 0, // Horizontal velocity for realistic movement
             velocityY: 0,
             jumping: false,
             grounded: true,
+            state: 'idle', // 'idle', 'airborne'
             targetY: this.baseGroundY - 50, // For smooth terrain transitions
-            jumpHeight: 120 // Maximum jump height
+            jumpHeight: 120, // Maximum jump height
+            landingPose: true, // Always land on feet
+            aimAngle: 0, // Current aim angle from mouse
+            flipState: 'normal' // 'normal', 'frontflip', 'backflip'
         };
         
         // Physics
         this.gravity = 0.8;
-        this.jumpPower = -15;
+        this.jumpPowerMin = 10; // Minimum jump power
+        this.jumpPowerMax = 15; // Maximum jump power
+        this.minJumpAngle = 45; // Minimum jump angle in degrees (increased for more height)
+        this.maxJumpAngle = 80; // Maximum jump angle in degrees (increased for more height)
+        
+        // Power Control System - Configurable timing constants
+        this.POWER_INDICATOR_DELAY = 100; // ms before indicator shows
+        this.POWER_LEVEL_1_TIME = 500;   // weak jump
+        this.POWER_LEVEL_2_TIME = 1500;   // normal jump
+        this.POWER_LEVEL_3_TIME = 2500;   // big jump
+        this.POWER_CYCLE_RESET = 4000;    // cycle back to level 1
+        
+        // Power state management
+        this.powerCharging = false;
+        this.powerStartTime = 0;
+        this.currentPowerLevel = 1;
+        this.showPowerIndicator = false;
         
         // Obstacles
         this.obstacles = [];
@@ -92,6 +116,16 @@
             segments: []
         };
         
+        // Particle system for landing effects
+        this.particles = [];
+        
+        // Mouse control system
+        this.mouse = {
+            x: 0,
+            y: 0,
+            isTracking: false
+        };
+        
         // Terrain transition
         this.terrainTransition = {
             active: false,
@@ -106,6 +140,52 @@
         this.initMountains();
         this.setupEventListeners();
         this.gameLoop();
+    }
+    
+    // Create dirt particles when goat lands
+    createLandingParticles(x, y) {
+        // Create 15-25 dirt particles around the landing point
+        const particleCount = Math.floor(Math.random() * 11) + 15;
+        
+        for (let i = 0; i < particleCount; i++) {
+            this.particles.push({
+                x: x + (Math.random() - 0.5) * 60, // Spread around goat's feet
+                y: y - 5, // Start slightly above ground
+                velocityX: (Math.random() - 0.5) * 6, // Random horizontal velocity
+                velocityY: -(Math.random() * 3 + 1), // Lower upward velocity (1-4 instead of 2-8)
+                life: Math.random() * 20 + 15, // 15-35 frames lifespan
+                maxLife: Math.random() * 20 + 15,
+                size: Math.floor(Math.random() * 3) + 2, // 2-4 pixel size
+                gravity: 0.4 // Slightly more gravity for lower arc
+            });
+        }
+    }
+    
+    // Update particle system
+    updateParticles() {
+        this.particles = this.particles.filter(particle => {
+            // Apply physics
+            particle.velocityY += particle.gravity;
+            particle.x += particle.velocityX;
+            particle.y += particle.velocityY;
+            
+            // Ground collision detection
+            const groundY = this.getGroundYAtPosition(particle.x);
+            if (particle.y >= groundY) {
+                particle.y = groundY; // Stop at ground level
+                particle.velocityY = 0; // Stop vertical movement
+                particle.velocityX *= 0.8; // Reduce horizontal movement on ground
+            }
+            
+            // Reduce life
+            particle.life--;
+            
+            // Add some air resistance
+            particle.velocityX *= 0.98;
+            
+            // Remove dead particles
+            return particle.life > 0;
+        });
     }
     
     // Get current ground Y position with gradual inclination
@@ -131,21 +211,28 @@
         return this.getCurrentGroundY(worldX);
     }
     
-    // Update camera to keep player in lower portion of screen
+    // Update camera to keep player at fixed screen position
     updateCamera() {
-        // Calculate player's screen position (world position - camera offset)
-        const playerScreenY = this.player.y - this.camera.y;
+        // Horizontal camera tracking - keep goat at fixed screen position
+        // Camera X should be: player world X - desired screen X
+        this.camera.targetX = this.player.x - this.camera.fixedScreenX;
         
-        // If player is above the threshold (50% of screen height), move camera up
+        // Vertical camera tracking - if player is above the threshold (50% of screen height), move camera up
+        const playerScreenY = this.player.y - this.camera.y;
         if (playerScreenY < this.camera.threshold) {
             // Calculate how much to move camera up to keep player at threshold
             const targetOffset = this.player.y - this.camera.threshold;
             this.camera.targetY = Math.max(0, targetOffset); // Don't go below 0
         }
         
-        // Smooth camera movement
-        const diff = this.camera.targetY - this.camera.y;
-        this.camera.y += diff * this.camera.smoothing;
+        // Smooth camera movement with higher smoothing to reduce sliding appearance
+        const diffX = this.camera.targetX - this.camera.x;
+        const diffY = this.camera.targetY - this.camera.y;
+        
+        // Use faster smoothing (0.3 instead of 0.1) to reduce lag and sliding effect
+        const fastSmoothing = 0.3;
+        this.camera.x += diffX * fastSmoothing;
+        this.camera.y += diffY * this.camera.smoothing;
     }
 
     init() {
@@ -255,16 +342,17 @@
             nearest: { alpha: 0.85, color: '#404040', baseHeight: 45, heightVariation: 25, speed: 0.12 }
         };
         
-        // Update mountain spawn timer
-        this.mountainSpawnTimer += this.gameSpeed;
+        // Update mountain spawn timer only when goat is airborne
+        const mountainScrollSpeed = this.player.state === 'airborne' ? this.player.velocityX : 0;
+        this.mountainSpawnTimer += mountainScrollSpeed;
         
         Object.keys(this.mountainLayers).forEach(layerName => {
             const config = layerConfigs[layerName];
             const mountains = this.mountainLayers[layerName];
             
-            // Move mountains based on their layer speed
+            // Move mountains based on their layer speed and goat state
             mountains.forEach(mountain => {
-                mountain.x -= this.gameSpeed * config.speed;
+                mountain.x -= mountainScrollSpeed * config.speed;
             });
             
             // Remove mountains that have moved completely off-screen to the left
@@ -368,7 +456,7 @@
         
         startButton.addEventListener('click', () => this.startGame());
         pauseButton.addEventListener('click', () => this.togglePause());
-        climbButton.addEventListener('click', () => this.jump());
+        climbButton.addEventListener('click', () => this.startPowerCharging());
         restartButton.addEventListener('click', () => this.restartGame());
         
         // Keyboard controls
@@ -378,7 +466,7 @@
                 if (this.gameState === 'start') {
                     this.startGame();
                 } else if (this.gameState === 'playing') {
-                    this.jump();
+                    this.startPowerCharging();
                 } else if (this.gameState === 'gameOver') {
                     this.restartGame();
                 }
@@ -387,6 +475,71 @@
                 this.togglePause();
             }
         });
+        
+        // Add keyup handler for power system
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' && this.gameState === 'playing') {
+                this.executeJump();
+            }
+        });
+        
+        // Mouse controls for angle selection
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (this.gameState === 'playing') {
+                const rect = this.canvas.getBoundingClientRect();
+                this.mouse.x = e.clientX - rect.left;
+                this.mouse.y = e.clientY - rect.top;
+            }
+        });
+        this.updateAimAngle();
+        
+        this.canvas.addEventListener('mouseenter', () => {
+            this.mouse.isTracking = true;
+        });
+        
+        this.canvas.addEventListener('mouseleave', () => {
+            this.mouse.isTracking = false;
+        });
+    }
+    
+    // Update power charging system
+    updatePowerCharging() {
+        if (this.powerCharging) {
+            const holdDuration = Date.now() - this.powerStartTime;
+            
+            // Show power indicator after delay
+            if (holdDuration >= this.POWER_INDICATOR_DELAY) {
+                this.showPowerIndicator = true;
+                
+                // Calculate current power level with cycling
+                const cycleTime = holdDuration % this.POWER_CYCLE_RESET;
+                if (cycleTime < this.POWER_LEVEL_1_TIME) {
+                    this.currentPowerLevel = 1;
+                } else if (cycleTime < this.POWER_LEVEL_2_TIME) {
+                    this.currentPowerLevel = 2;
+                } else if (cycleTime < this.POWER_LEVEL_3_TIME) {
+                    this.currentPowerLevel = 3;
+                } else {
+                    this.currentPowerLevel = 1; // Reset to level 1 after max time
+                }
+            }
+        }
+    }
+    
+    // Update aim angle based on mouse position
+    updateAimAngle() {
+        if (this.player.state === 'idle' && this.player.grounded && this.mouse.isTracking) {
+            // Get goat's screen position
+            const goatScreenX = this.player.x - this.camera.x;
+            const goatScreenY = this.player.y - this.camera.y;
+            
+            // Calculate angle from goat to mouse
+            const deltaX = this.mouse.x - goatScreenX;
+            const deltaY = this.mouse.y - goatScreenY;
+            
+            // Calculate angle in radians (atan2 gives -π to π)
+            this.player.aimAngle = Math.atan2(deltaY, deltaX);
+        }
     }
 
     playSound(name) {
@@ -434,13 +587,20 @@
         this.currentTerrainLevel = 0;
         this.obstaclesCleared = 0;
         this.totalDistance = 0; // Reset distance tracking
-        this.camera.y = 0; // Reset camera position
+        this.camera.x = 0; // Reset camera position
+        this.camera.y = 0;
+        this.camera.targetX = 0;
         this.camera.targetY = 0;
-        this.player.y = this.baseGroundY - 50;
-        this.player.targetY = this.baseGroundY - 50;
+        this.player.x = 100; // Reset player X position
+        this.player.y = this.baseGroundY - this.player.height;
+        this.player.targetY = this.baseGroundY - this.player.height;
+        this.player.velocityX = 0;
         this.player.velocityY = 0;
         this.player.jumping = false;
         this.player.grounded = true;
+        this.player.state = 'idle';
+        this.player.aimAngle = 0;
+        this.player.flipState = 'normal';
         this.groundOffset = 0;
         this.terrainTransition.active = false;
         
@@ -448,6 +608,9 @@
         this.weatherClouds = [];
         this.rainDrops = [];
         this.lightning.active = false;
+        
+        // Reset particles
+        this.particles = [];
         
         // Reset mountains
         this.mountainLayers = {
@@ -466,11 +629,167 @@
         }
     }
     
-    jump() {
-        if (this.player.grounded) {
-            this.player.velocityY = this.jumpPower;
+    // Power charging methods
+    startPowerCharging() {
+        if (this.player.grounded && this.player.state === 'idle' && !this.powerCharging) {
+            this.powerCharging = true;
+            this.powerStartTime = Date.now();
+            this.currentPowerLevel = 1;
+            this.showPowerIndicator = false;
+        }
+    }
+    
+    executeJump() {
+        if (this.powerCharging) {
+            const holdDuration = Date.now() - this.powerStartTime;
+            
+            // Determine power level based on hold duration
+            if (holdDuration < this.POWER_INDICATOR_DELAY) {
+                this.currentPowerLevel = 1; // Early release = weak jump
+            } else {
+                // Calculate power level with cycling
+                const cycleTime = holdDuration % this.POWER_CYCLE_RESET;
+                if (cycleTime < this.POWER_LEVEL_1_TIME) {
+                    this.currentPowerLevel = 1;
+                } else if (cycleTime < this.POWER_LEVEL_2_TIME) {
+                    this.currentPowerLevel = 2;
+                } else if (cycleTime < this.POWER_LEVEL_3_TIME) {
+                    this.currentPowerLevel = 3;
+                } else {
+                    this.currentPowerLevel = 1; // Reset to level 1 after max time
+                }
+            }
+            
+            // Reset power state
+            this.powerCharging = false;
+            this.showPowerIndicator = false;
+            
+            // Execute jump with calculated power level
+            this.jump(this.currentPowerLevel);
+        }
+    }
+    
+    jump(powerLevel = 1) {
+        if (this.player.grounded && this.player.state === 'idle') {
+            // Use mouse-selected angle for directional jump mechanics
+            const jumpAngle = this.player.aimAngle;
+            // Calculate base power with power level multiplier
+            const basePowerRaw = Math.random() * (this.jumpPowerMax - this.jumpPowerMin) + this.jumpPowerMin;
+            let powerMultiplier = 1.0;
+            
+            // Apply power level scaling
+            switch(powerLevel) {
+                case 1: powerMultiplier = 0.7; break; // Weak jump
+                case 2: powerMultiplier = 1.0; break; // Normal jump
+                case 3: powerMultiplier = 1.4; break; // Big jump
+            }
+            
+            const basePower = basePowerRaw * powerMultiplier;
+            
+            // Convert angle to degrees for easier calculation
+            const angleInDegrees = jumpAngle * 180 / Math.PI;
+            
+            // Calculate directional power multipliers based on angle
+            const horizontalComponent = Math.abs(Math.cos(jumpAngle));
+            const verticalComponent = Math.abs(Math.sin(jumpAngle));
+            
+            // 12-direction system with sliding multipliers
+            // Normalize angle to 0-360 range for easier calculation
+            let normalizedAngle = angleInDegrees;
+            if (normalizedAngle < 0) normalizedAngle += 360;
+            
+            // Calculate multipliers based on 12 directions (30° segments)
+            // Each direction has optimized horizontal/vertical emphasis
+            let horizontalMultiplier = 1.0;
+            let verticalMultiplier = 1.0;
+            
+            // Right (0°): Max horizontal, min vertical
+            if (normalizedAngle >= 345 || normalizedAngle <= 15) {
+                horizontalMultiplier = 2.0;
+                verticalMultiplier = 1.0;
+            }
+            // Right-Down (30°): High horizontal, low vertical
+            else if (normalizedAngle > 15 && normalizedAngle <= 45) {
+                horizontalMultiplier = 1.9;
+                verticalMultiplier = 1.1;
+            }
+            // Down-Right (60°): Medium horizontal, medium vertical
+            else if (normalizedAngle > 45 && normalizedAngle <= 75) {
+                horizontalMultiplier = 1.7;
+                verticalMultiplier = 1.2;
+            }
+            // Down (90°): Medium horizontal, medium vertical
+            else if (normalizedAngle > 75 && normalizedAngle <= 105) {
+                horizontalMultiplier = 1.5;
+                verticalMultiplier = 1.3;
+            }
+            // Down-Left (120°): Medium horizontal, medium vertical
+            else if (normalizedAngle > 105 && normalizedAngle <= 135) {
+                horizontalMultiplier = 1.7;
+                verticalMultiplier = 1.2;
+            }
+            // Left-Down (150°): High horizontal, low vertical
+            else if (normalizedAngle > 135 && normalizedAngle <= 165) {
+                horizontalMultiplier = 1.9;
+                verticalMultiplier = 1.1;
+            }
+            // Left (180°): Max horizontal, min vertical
+            else if (normalizedAngle > 165 && normalizedAngle <= 195) {
+                horizontalMultiplier = 2.0;
+                verticalMultiplier = 1.0;
+            }
+            // Left-Up (210°): High horizontal, low vertical
+            else if (normalizedAngle > 195 && normalizedAngle <= 225) {
+                horizontalMultiplier = 1.9;
+                verticalMultiplier = 1.1;
+            }
+            // Up-Left (240°): Low horizontal, high vertical
+            else if (normalizedAngle > 225 && normalizedAngle <= 255) {
+                horizontalMultiplier = 1.2;
+                verticalMultiplier = 1.6;
+            }
+            // Up (270°): Min horizontal, max vertical
+            else if (normalizedAngle > 255 && normalizedAngle <= 285) {
+                horizontalMultiplier = 0.9;
+                verticalMultiplier = 1.8;
+            }
+            // Up-Right (300°): Low horizontal, high vertical
+            else if (normalizedAngle > 285 && normalizedAngle <= 315) {
+                horizontalMultiplier = 1.2;
+                verticalMultiplier = 1.6;
+            }
+            // Right-Up (330°): High horizontal, low vertical
+            else if (normalizedAngle > 315 && normalizedAngle < 345) {
+                horizontalMultiplier = 1.9;
+                verticalMultiplier = 1.1;
+            }
+            
+            // Apply sliding scale based on how close to pure direction
+            const horizontalPower = basePower * horizontalComponent * horizontalMultiplier;
+            const verticalPower = basePower * verticalComponent * verticalMultiplier;
+            
+            // Calculate final velocity components
+            this.player.velocityX = horizontalPower * Math.cos(jumpAngle);
+            this.player.velocityY = verticalPower * Math.sin(jumpAngle); // Positive Y is downward in canvas
+            
+            // Check for extreme downward angles for flip animation
+            if (Math.abs(angleInDegrees) > 135 || (angleInDegrees > 45 && angleInDegrees < 135)) {
+                // Extreme downward angle - determine flip direction
+                if (jumpAngle > 0) {
+                    this.player.flipState = 'frontflip';
+                } else {
+                    this.player.flipState = 'backflip';
+                }
+            } else {
+                this.player.flipState = 'normal';
+            }
+            
+            // Update player state
             this.player.jumping = true;
             this.player.grounded = false;
+            this.player.state = 'airborne';
+            this.player.landingPose = false;
+            
             this.playSound('jump');
         }
     }
@@ -658,29 +977,54 @@
         // Update mountains (parallax scrolling)
         this.updateMountains();
         
-        // Update player physics
-        this.player.velocityY += this.gravity;
-        this.player.y += this.player.velocityY;
-        
-        // Ground collision with inclined terrain
-        const playerGroundY = this.getGroundYAtPosition(this.player.x);
-        if (this.player.y >= playerGroundY - this.player.height) {
-            this.player.y = playerGroundY - this.player.height;
-            this.player.velocityY = 0;
-            this.player.jumping = false;
-            this.player.grounded = true;
+        // Update player physics based on state
+        if (this.player.state === 'airborne') {
+            // Apply gravity only to Y velocity
+            this.player.velocityY += this.gravity;
+            
+            // Update position with both X and Y velocity
+            this.player.x += this.player.velocityX;
+            this.player.y += this.player.velocityY;
+            
+            // Ground collision with inclined terrain
+            const playerGroundY = this.getGroundYAtPosition(this.player.x);
+            if (this.player.y >= playerGroundY - this.player.height) {
+                // Landing - ensure goat always lands on feet and stops immediately
+                this.player.y = playerGroundY - this.player.height;
+                this.player.velocityX = 0;
+                this.player.velocityY = 0;
+                this.player.jumping = false;
+                this.player.grounded = true;
+                this.player.state = 'idle';
+                this.player.landingPose = true;
+                this.player.flipState = 'normal'; // Reset flip state on landing
+                
+                // Create dirt particles on landing
+                this.createLandingParticles(this.player.x, this.player.y + this.player.height);
+                
+                // Stop all horizontal movement immediately
+                return; // Exit early to prevent any further position updates
+            }
         }
         
-        // Update total distance traveled and ground scrolling
-        this.totalDistance += this.gameSpeed;
-        this.groundOffset -= this.gameSpeed;
-        if (this.groundOffset <= -50) {
-            this.groundOffset = 0;
+        // Update total distance traveled and ground scrolling only when goat is airborne
+        if (!this.player.grounded) {
+            this.totalDistance += Math.abs(this.player.velocityX) * 0.1;
         }
         
-        // Update clouds
+        // Update power charging system
+        this.updatePowerCharging();
+        
+        // Update camera to follow player
+        this.updateCamera();
+        
+        // Update aim angle
+        this.updateAimAngle();
+        
+        // Update clouds - move slowly when goat is idle, normal speed when airborne
+        const cloudSpeedMultiplier = this.player.state === 'idle' ? 0.1 : 1.0;
         this.clouds.forEach(cloud => {
-            cloud.x -= cloud.speed;
+            cloud.x -= cloud.speed * cloudSpeedMultiplier;
             if (cloud.x + cloud.width < 0) {
                 cloud.x = this.canvas.width + Math.random() * 100;
                 cloud.y = Math.random() * 100 + 20;
@@ -690,15 +1034,20 @@
         // Update weather clouds and effects
         this.updateWeather();
         
+        // Update particle system
+        this.updateParticles();
+        
         // Generate obstacles with different shapes and sizes
         this.obstacleTimer++;
         if (this.obstacleTimer > this.obstacleInterval) {
             // Create different types of obstacles
             const obstacleType = Math.floor(Math.random() * 5); // 5 different types
             
+            // Spawn obstacle off-screen to the right in world coordinates
+            const spawnX = this.camera.x + this.canvas.width + 50;
             let obstacle = {
-                x: this.canvas.width,
-                y: this.getGroundYAtPosition(this.canvas.width),
+                x: spawnX,
+                y: this.getGroundYAtPosition(spawnX),
                 passed: false,
                 terrainLevel: this.currentTerrainLevel,
                 type: obstacleType
@@ -737,7 +1086,7 @@
             // Max jump height is 120px, so obstacle height should be less than that
             if (obstacle.height > 100) {
                 obstacle.height = 100;
-                obstacle.y = this.getCurrentGroundY() - obstacle.height;
+                obstacle.y = this.getGroundYAtPosition(obstacle.x) - obstacle.height;
             }
             
             this.obstacles.push(obstacle);
@@ -751,10 +1100,11 @@
         // Generate leaves
         this.leafTimer++;
         if (this.leafTimer > this.leafInterval) {
-            // Create a new leaf
+            // Create a new leaf - spawn off-screen to the right in world coordinates
+            const leafSpawnX = this.camera.x + this.canvas.width + 50;
             const leaf = {
-                x: this.canvas.width,
-                y: this.canvas.height - 50 - Math.random() * 60 - 60, // Spawn from half jump height to full jump height above ground
+                x: leafSpawnX,
+                y: this.getGroundYAtPosition(leafSpawnX) - 50 - Math.random() * 60 - 60, // Spawn from half jump height to full jump height above ground
                 width: 16,
                 height: 12,
                 collected: false,
@@ -769,9 +1119,10 @@
             this.leafInterval = Math.random() * 300 + 300;
         }
         
-        // Update obstacles
+        // Update obstacles - only move when goat is airborne
+        const obstacleScrollSpeed = this.player.state === 'airborne' ? this.player.velocityX : 0;
         this.obstacles = this.obstacles.filter(obstacle => {
-            obstacle.x -= this.gameSpeed;
+            obstacle.x -= obstacleScrollSpeed;
             
             // Check if player passed obstacle (for scoring and terrain elevation)
             if (!obstacle.passed && obstacle.x + obstacle.width < this.player.x) {
@@ -783,9 +1134,9 @@
             return obstacle.x + obstacle.width > 0;
         });
         
-        // Update leaves
+        // Update leaves - only move when goat is airborne
         this.leaves = this.leaves.filter(leaf => {
-            leaf.x -= this.gameSpeed * 0.8; // Leaves move slightly slower than obstacles
+            leaf.x -= obstacleScrollSpeed * 0.8; // Leaves move slightly slower than obstacles
             
             // Update floating animation
             leaf.floatOffset += leaf.floatSpeed;
@@ -907,8 +1258,9 @@
         // Draw ground segments that follow the incline
         const segmentWidth = 20;
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += segmentWidth) {
-            const groundY1 = this.getGroundYAtPosition(x) - this.camera.y;
-            const groundY2 = this.getGroundYAtPosition(x + segmentWidth) - this.camera.y;
+            const worldX = x + this.camera.x;
+            const groundY1 = this.getGroundYAtPosition(worldX) - this.camera.y;
+            const groundY2 = this.getGroundYAtPosition(worldX + segmentWidth) - this.camera.y;
             
             // Draw main ground segment
             ctx.fillRect(x, groundY1, segmentWidth, 4);
@@ -930,7 +1282,8 @@
         
         // Add rocky texture details on visible terrain
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += 45) {
-            const groundY = this.getGroundYAtPosition(x) - this.camera.y;
+            const worldX = x + this.camera.x;
+            const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
             ctx.fillRect(x + 10, groundY - 6, 8, 6);
             ctx.fillRect(x + 25, groundY - 4, 6, 4);
         }
@@ -938,7 +1291,7 @@
         // Draw leaves
         this.leaves.forEach(leaf => {
             if (!leaf.collected) {
-                const lx = Math.floor(leaf.x / 2) * 2;
+                const lx = Math.floor((leaf.x - this.camera.x) / 2) * 2;
                 const ly = Math.floor((leaf.y + Math.sin(leaf.floatOffset) * 5 - this.camera.y) / 2) * 2; // Floating animation with camera
                 
                 ctx.fillStyle = '#2E7D32'; // Green color for leaf
@@ -956,9 +1309,92 @@
             }
         });
         
+        // Draw aim arrow when goat is idle
+        if (this.player.state === 'idle' && this.player.grounded && this.mouse.isTracking) {
+            const goatScreenX = Math.floor((this.player.x - this.camera.x) / 2) * 2;
+            const goatScreenY = Math.floor((this.player.y - this.camera.y) / 2) * 2;
+            
+            // Calculate arrow position floating above/near goat
+            const goatCenterX = goatScreenX + this.player.width / 2;
+            const goatCenterY = goatScreenY + this.player.height / 2;
+            
+            // Offset triangle to float detached from goat
+            const triangleOffset = 25;
+            const triangleCenterX = goatCenterX + Math.cos(this.player.aimAngle) * triangleOffset;
+            const triangleCenterY = goatCenterY + Math.sin(this.player.aimAngle) * triangleOffset;
+            
+            // Set transparency
+            ctx.globalAlpha = 0.7;
+            
+            // Draw triangle pointing in selected direction
+            const triangleSize = 12;
+            
+            // Calculate triangle points
+            const pointX = triangleCenterX + Math.cos(this.player.aimAngle) * triangleSize;
+            const pointY = triangleCenterY + Math.sin(this.player.aimAngle) * triangleSize;
+            
+            const baseAngle1 = this.player.aimAngle + Math.PI * 0.75;
+            const baseAngle2 = this.player.aimAngle - Math.PI * 0.75;
+            
+            const base1X = triangleCenterX + Math.cos(baseAngle1) * (triangleSize * 0.6);
+            const base1Y = triangleCenterY + Math.sin(baseAngle1) * (triangleSize * 0.6);
+            
+            const base2X = triangleCenterX + Math.cos(baseAngle2) * (triangleSize * 0.6);
+            const base2Y = triangleCenterY + Math.sin(baseAngle2) * (triangleSize * 0.6);
+            
+            // Draw filled triangle
+            ctx.fillStyle = '#228B22';
+            ctx.beginPath();
+            ctx.moveTo(pointX, pointY);
+            ctx.lineTo(base1X, base1Y);
+            ctx.lineTo(base2X, base2Y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Reset transparency
+            ctx.globalAlpha = 1.0;
+        }
+        
+        // Draw power indicator when charging
+        if (this.showPowerIndicator && this.powerCharging) {
+            const goatScreenX = Math.floor((this.player.x - this.camera.x) / 2) * 2;
+            const goatScreenY = Math.floor((this.player.y - this.camera.y) / 2) * 2;
+            
+            const indicatorX = goatScreenX + this.player.width / 2;
+            const indicatorY = goatScreenY - 30; // Above the goat
+            
+            // Power level colors
+            let powerColor = '#00FF00'; // Green for level 1
+            if (this.currentPowerLevel === 2) {
+                powerColor = '#FFFF00'; // Yellow for level 2
+            } else if (this.currentPowerLevel === 3) {
+                powerColor = '#FF0000'; // Red for level 3
+            }
+            
+            // Draw power level bars
+            const barWidth = 8;
+            const barHeight = 20;
+            const barSpacing = 2;
+            
+            for (let i = 1; i <= 3; i++) {
+                const barX = indicatorX - (barWidth * 1.5) + (i - 1) * (barWidth + barSpacing);
+                
+                if (i <= this.currentPowerLevel) {
+                    // Filled bar for current power level
+                    ctx.fillStyle = powerColor;
+                    ctx.fillRect(barX, indicatorY, barWidth, barHeight);
+                } else {
+                    // Empty bar outline
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(barX, indicatorY, barWidth, barHeight);
+                }
+            }
+        }
+        
         // Draw player (Mountain Goat) - pixelated monochrome style
         ctx.fillStyle = '#000000';
-        const px = Math.floor(this.player.x / 2) * 2;
+        const px = Math.floor((this.player.x - this.camera.x) / 2) * 2;
         const py = Math.floor((this.player.y - this.camera.y) / 2) * 2;
         
         // Goat body (pixelated)
@@ -968,19 +1404,34 @@
         // Goat horns
         ctx.fillRect(px + 26, py + 8, 2, 6);
         ctx.fillRect(px + 32, py + 8, 2, 6);
-        // Goat legs - always show legs but adjust position based on jumping
-        if (this.player.grounded) {
-            // Legs when on ground
+        // Goat legs - show different poses based on state and flip
+        if (this.player.state === 'idle' || this.player.landingPose) {
+            // Legs when on ground - always land on feet
             ctx.fillRect(px + 10, py + 36, 4, 12);
             ctx.fillRect(px + 16, py + 36, 4, 12);
             ctx.fillRect(px + 22, py + 36, 4, 12);
             ctx.fillRect(px + 28, py + 36, 4, 12);
         } else {
-            // Legs when jumping - bent position
-            ctx.fillRect(px + 10, py + 30, 4, 8);
-            ctx.fillRect(px + 16, py + 32, 4, 6);
-            ctx.fillRect(px + 22, py + 32, 4, 6);
-            ctx.fillRect(px + 28, py + 30, 4, 8);
+            // Legs when airborne - show flip animation if flipping
+            if (this.player.flipState === 'frontflip') {
+                // Front flip - legs tucked up
+                ctx.fillRect(px + 12, py + 20, 4, 6);
+                ctx.fillRect(px + 18, py + 18, 4, 6);
+                ctx.fillRect(px + 24, py + 18, 4, 6);
+                ctx.fillRect(px + 30, py + 20, 4, 6);
+            } else if (this.player.flipState === 'backflip') {
+                // Back flip - legs extended back
+                ctx.fillRect(px + 6, py + 28, 4, 8);
+                ctx.fillRect(px + 12, py + 26, 4, 8);
+                ctx.fillRect(px + 18, py + 26, 4, 8);
+                ctx.fillRect(px + 24, py + 28, 4, 8);
+            } else {
+                // Normal airborne - bent position for jumping
+                ctx.fillRect(px + 10, py + 30, 4, 8);
+                ctx.fillRect(px + 16, py + 32, 4, 6);
+                ctx.fillRect(px + 22, py + 32, 4, 6);
+                ctx.fillRect(px + 28, py + 30, 4, 8);
+            }
         }
         // Goat tail
         ctx.fillRect(px + 4, py + 24, 6, 4);
@@ -995,7 +1446,7 @@
         // Draw obstacles (Rock formations) - different shapes and sizes
         ctx.fillStyle = '#000000';
         this.obstacles.forEach(obstacle => {
-            const ox = Math.floor(obstacle.x / 2) * 2;
+            const ox = Math.floor((obstacle.x - this.camera.x) / 2) * 2;
             const oy = Math.floor((obstacle.y - this.camera.y) / 2) * 2;
             
             // Draw different rock shapes based on obstacle type
@@ -1071,6 +1522,26 @@
         this.rainDrops.forEach(drop => {
             ctx.fillRect(Math.floor(drop.x), Math.floor(drop.y - this.camera.y), 1, 4);
         });
+        
+        // Draw dirt particles - monochrome dark colors
+        this.particles.forEach(particle => {
+            const px = Math.floor((particle.x - this.camera.x) / 2) * 2;
+            const py = Math.floor((particle.y - this.camera.y) / 2) * 2;
+            
+            // Fade particles as they age
+            const alpha = particle.life / particle.maxLife;
+            
+            // Use monochrome dark colors - darker grays and black
+            const grayValue = Math.floor(alpha * 128); // 0-128 for dark range
+            const grayHex = grayValue.toString(16).padStart(2, '0');
+            ctx.fillStyle = `#${grayHex}${grayHex}${grayHex}`;
+            
+            // Draw pixelated dirt particle
+            ctx.fillRect(px, py, particle.size, particle.size);
+        });
+        
+        // Reset alpha
+        ctx.globalAlpha = 1.0;
         
         // Draw lightning
         if (this.lightning.active) {
