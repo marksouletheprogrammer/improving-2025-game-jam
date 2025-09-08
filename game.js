@@ -1271,12 +1271,10 @@ class RockClimbingGame {
     setupEventListeners() {
         const startButton = document.getElementById('startButton');
         const pauseButton = document.getElementById('pauseButton');
-        const climbButton = document.getElementById('climbButton');
         const restartButton = document.getElementById('restartButton');
         
         startButton.addEventListener('click', () => this.startGame());
         pauseButton.addEventListener('click', () => this.togglePause());
-        climbButton.addEventListener('click', () => this.startPowerCharging());
         restartButton.addEventListener('click', () => this.restartGame());
         
         // Keyboard controls
@@ -1751,7 +1749,6 @@ class RockClimbingGame {
     updateUI() {
         const startButton = document.getElementById('startButton');
         const pauseButton = document.getElementById('pauseButton');
-        const climbButton = document.getElementById('climbButton');
         const restartButton = document.getElementById('restartButton');
         const scoreValue = document.getElementById('scoreValue');
         
@@ -1761,28 +1758,23 @@ class RockClimbingGame {
             case 'start':
                 startButton.style.display = 'block';
                 pauseButton.style.display = 'none';
-                climbButton.style.display = 'none';
                 restartButton.style.display = 'none';
                 break;
             case 'playing':
                 startButton.style.display = 'none';
                 pauseButton.style.display = 'block';
-                climbButton.style.display = 'block';
                 restartButton.style.display = 'none';
                 break;
             case 'paused':
                 pauseButton.textContent = 'RESUME';
-                climbButton.style.display = 'none';
                 break;
             case 'gameOver':
                 startButton.style.display = 'none';
                 pauseButton.style.display = 'none';
-                climbButton.style.display = 'none';
                 break;
             case 'victory':
                 startButton.style.display = 'none';
                 pauseButton.style.display = 'none';
-                climbButton.style.display = 'none';
                 restartButton.style.display = 'block';
                 break;
         }
@@ -2008,7 +2000,7 @@ class RockClimbingGame {
                 this.speedReduction = Math.min(this.speedReduction + 0.1, 0.5);
                 
                 // Add bonus points for collecting leaf
-                this.score += 10;
+                this.score += 100;
             }
         }
     }
@@ -2450,7 +2442,6 @@ class RockClimbingGame {
             ctx.font = '12px monospace';
             ctx.textAlign = 'left';
             ctx.fillText(`LEAVES: ${this.leafCollected}`, 10, 60);
-            ctx.fillText(`SLOW: ${Math.round(this.speedReduction * 100)}%`, 10, 75);
         }
         
         // Draw game state overlays
