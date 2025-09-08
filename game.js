@@ -271,8 +271,8 @@ class TerrainGenerator {
             // Store the obstacle without Y position first
             obstacle.y = 0; // Temporary value
             
-            // After terrain is loaded, we'll reposition obstacles to match floor collision
-            // For now, use fallback positioning
+            // Temporarily ground obstacle using baseline elevation; it will be precisely grounded later
+            // after chunks load via repositionObstaclesToFloor()
             const terrainY = game.getCurrentGroundY(obstacle.x);
             obstacle.y = terrainY - obstacle.height;
             obstacle.passed = false;
@@ -301,6 +301,7 @@ class TerrainGenerator {
         for (let i = 0; i < leafCount; i++) {
             // Random position within chunk
             const x = chunk.startX + seededLeafRandom() * chunk.width;
+            // Use baseline elevation during generation; leaves float above and don't need exact grounding
             const groundY = game.getCurrentGroundY(x);
             
             const leaf = {
@@ -690,6 +691,9 @@ class RockClimbingGame {
         // Debug flags - set these BEFORE creating terrain manager
         this.renderObstacles = true; // Set to false to hide obstacles for debugging
         this.enableObstacleCollision = true; // Set to false to disable obstacle collision for debugging
+        // Visual overlap to slightly embed rocks into ground (in pixels)
+        // Set to 0 to avoid appearing underground on steep/wavy terrain
+        this.obstacleGroundOverlap = 0;
         
         // Terrain chunk management system
         this.terrainChunkManager = new TerrainChunkManager(this);
@@ -735,8 +739,8 @@ class RockClimbingGame {
             const floorY = this.terrainChunkManager.getTerrainYAtWorldX(worldX);
             
             // Position obstacle to overlap floor slightly for better visual grounding
-            // Allow 4px overlap into the ground for solid appearance
-            obstacle.y = floorY - obstacle.height + 4;
+            // Allow slight overlap into the ground for solid appearance
+            obstacle.y = floorY - obstacle.height + this.obstacleGroundOverlap;
             
             // Remove any floating properties that might be applied from leaf logic
             delete obstacle.floatOffset;
@@ -927,9 +931,9 @@ class RockClimbingGame {
         return this.baseGroundY - totalElevation;
     }
     
-    // Get ground Y at a specific screen position (for collision detection)
-    getGroundYAtPosition(screenX) {
-        const worldX = this.totalDistance + screenX;
+    // Get ground Y at a specific WORLD X position
+    // Note: Many callers already compute worldX (e.g., x + camera.x or player.x)
+    getGroundYAtPosition(worldX) {
         return this.terrainChunkManager.getTerrainYAtWorldX(worldX);
     }
     
@@ -1945,6 +1949,13 @@ class RockClimbingGame {
             // Keep obstacles that are still visible on screen (with some margin for off-screen)
             return obstacle.x + obstacle.width > this.camera.x - 100;
         });
+
+        // Safety snap: ensure obstacles remain grounded on terrain (handles transitions/edge cases)
+        this.obstacles.forEach(obstacle => {
+            const trueTopY = this.terrainChunkManager.getTerrainYAtWorldX(obstacle.x) - obstacle.height + this.obstacleGroundOverlap;
+            // Always align to exact terrain to prevent any visual mismatch
+            obstacle.y = trueTopY;
+        });
         
         // Update leaves - leaves are also stationary world objects, only update floating animation
         this.leaves = this.leaves.filter(leaf => {
@@ -1972,9 +1983,8 @@ class RockClimbingGame {
         // Check obstacle collisions
         if (this.enableObstacleCollision) {
             for (let obstacle of this.obstacles) {
-                // Use dynamic terrain positioning for collision detection
-                const terrainY = this.getCurrentGroundY(obstacle.x);
-                const obstacleY = terrainY - obstacle.height; // Same positioning as rendering
+                // Use grounded obstacle.y for collision detection (kept in sync with terrain)
+                const obstacleY = obstacle.y;
                 
                 if (playerRect.x < obstacle.x + obstacle.width &&
                     playerRect.x + playerRect.width > obstacle.x &&
@@ -2304,12 +2314,11 @@ class RockClimbingGame {
         if (this.renderObstacles) {
             ctx.fillStyle = '#000000';
             this.obstacles.forEach(obstacle => {
-            // Dynamically position obstacle on terrain for proper grounding
-            const terrainY = this.getCurrentGroundY(obstacle.x);
-            const groundedY = terrainY - obstacle.height;
+            // Use stored grounded position (kept in sync with terrain)
+            const groundedY = obstacle.y;
             
-            const ox = Math.floor((obstacle.x - this.camera.x) / 2) * 2;
-            const oy = Math.floor((groundedY - this.camera.y) / 2) * 2;
+            const ox = Math.floor(obstacle.x - this.camera.x);
+            const oy = Math.floor(groundedY - this.camera.y);
             
             // Draw different rock shapes based on obstacle type
             switch(obstacle.type) {
