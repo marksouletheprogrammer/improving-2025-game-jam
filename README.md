@@ -2,10 +2,20 @@
 
 A skill-based 2D platformer where you control a mountain goat navigating treacherous terrain using precision jumping mechanics. Master the art of directional jumping to overcome obstacles and reach new heights!
 
+Features procedurally generated terrain. 
+
+# How this game was developed
+
+This was an almost entirely vibecoded project. Using Windsurf, Claude, and GPT. 
+
+Find out about our process in DEVELOPMENT.md.
+
 ## 🎮 How to Play
 
 ### Getting Started
 Simply open `index.html` in any modern web browser to start playing.
+
+Refresh the page to generate a new mountain.
 
 ### Controls
 - **Mouse**: Aim your jump direction by moving the cursor
@@ -33,15 +43,9 @@ Simply open `index.html` in any modern web browser to start playing.
 - **Height Bonus**: Extra points for high jumps (>80px above ground)
 - **Leaf**: 100 points for each leaf collected
 
-#### Terrain Features
-- **Dynamic Terrain**: Procedurally arranged terrain chunks with varying difficulty
-- **Gradual Inclination**: Mountain path gets steeper as you progress
-- **Weather Effects**: Rain and lightning for atmospheric challenge
-- **Parallax Mountains**: Multi-layered background with depth
-
 ## 🏆 Victory Condition
 
-Reach the end of the mountain terrain to win! The game features a finite course with multiple terrain chunks arranged for optimal challenge progression.
+Reach the end of the mountain terrain to win!
 
 ## 🎨 Visual Style
 
@@ -58,6 +62,11 @@ Reach the end of the mountain terrain to win! The game features a finite course 
 - **Collect Sound**: Leaf pickup from [Pixabay](https://pixabay.com/)
 
 ## 🛠️ Technical Features
+
+### We build a procedural system for building the game world from pixelmaps.
+- Programmer adds pixelmaps to `assets/chunks`.
+- The game uses these to procedurally generate terrain from those pixelmaps.
+- See CHUNKS.md.
 
 ### Advanced Physics
 - Realistic gravity and momentum system
@@ -85,43 +94,8 @@ Reach the end of the mountain terrain to win! The game features a finite course 
 
 This game was created as part of the Improving 2025 Game Jam, focusing on innovative mechanics and polished gameplay. The unique mouse-directed jumping system sets it apart from traditional platformers, requiring players to think strategically about each jump's direction and power.
 
-## 🚀 Installation & Setup
-
-1. Download all game files
-2. Ensure the following structure:
-   ```
-   game/
-   ├── index.html
-   ├── script.js
-   ├── style.css
-   └── assets/
-       ├── music.mp3
-       ├── jump.wav
-       ├── collect.mp3
-       └── gameover.m4a
-   ```
-3. Open `index.html` in a modern web browser
-4. No additional installation required!
-
-## 🔧 Browser Requirements
-
-- Chrome 60+ (recommended)
-- Firefox 55+
-- Safari 12+
-- Edge 79+
-
-Requires HTML5 Canvas and Web Audio API support.
-
 ## 👥 Development Team
 
 - **Mark Soule** - Lead Developer & Programming
-- **Faizan Fahim** - Game Designer & Concept Creator  
-- **Kevin Kong** - Co-Developer & Programming Support
-
-## 📜 License
-
-This game is released under the MIT License. Feel free to study, modify, and learn from the code!
-
----
-
-*Climb higher, jump smarter, and conquer the mountain! 🏔️*
+- **Faizan Fahim** - Game Designer, Art lead, & Programming Support
+- **Kevin Kong** - Co-Developer, Sound, & Programming Support
