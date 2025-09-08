@@ -1720,18 +1720,15 @@ class RockClimbingGame {
             }
         }
     }
-    
+
     // Get interpolated ground Y during transitions
     getTransitionGroundY() {
         if (!this.terrainTransition.active) {
             return this.getCurrentGroundY();
         }
-        
         const progress = this.terrainTransition.progress / this.terrainTransition.duration;
         const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
-        
-        return this.terrainTransition.startY + 
-               (this.terrainTransition.targetY - this.terrainTransition.startY) * easeProgress;
+        return this.terrainTransition.startY + (this.terrainTransition.targetY - this.terrainTransition.startY) * easeProgress;
     }
     
     // Update weather system
@@ -1860,8 +1857,8 @@ class RockClimbingGame {
     update() {
         if (this.gameState !== 'playing') return;
         
-        // Calculate game speed with terrain level and leaf reduction
-        const baseSpeed = this.baseGameSpeed * Math.pow(1.1, this.currentTerrainLevel);
+        // Calculate game speed without level scaling; only score and leaves affect it
+        const baseSpeed = this.baseGameSpeed;
         this.gameSpeed = (baseSpeed + Math.floor(this.score / 100) * 0.3) * (1 - this.speedReduction);
         
         // Update terrain transition
@@ -2003,7 +2000,6 @@ class RockClimbingGame {
                 this.obstaclesCleared++;
 
                 this.awardObstacleClearPoints(obstacle);
-
                 this.checkTerrainElevation();
             }
             
@@ -2685,15 +2681,7 @@ class RockClimbingGame {
             }
         }
         
-        // Draw terrain level indicator with difficulty info
-        if (this.currentTerrainLevel > 0) {
-            ctx.fillStyle = '#000000';
-            ctx.font = '12px monospace';
-            ctx.textAlign = 'left';
-            ctx.fillText(`LEVEL ${this.currentTerrainLevel + 1}`, 10, 30);
-            const speedMultiplier = Math.round(Math.pow(1.1, this.currentTerrainLevel) * 100 * (1 - this.speedReduction));
-            ctx.fillText(`SPEED: ${speedMultiplier}%`, 10, 45);
-        }
+        
         
         // Draw leaf collection indicator
         if (this.leafCollected > 0) {
