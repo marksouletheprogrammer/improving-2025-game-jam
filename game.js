@@ -2687,7 +2687,7 @@ class RockClimbingGame {
             ctx.fillStyle = '#000000';
             ctx.font = '32px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('ROCK CLIMBING', this.canvas.width / 2, this.canvas.height / 2 - 30);
+            ctx.fillText('GOAT SLINGER', this.canvas.width / 2, this.canvas.height / 2 - 30);
             ctx.font = '16px monospace';
             ctx.fillText('Press SPACE to climb', this.canvas.width / 2, this.canvas.height / 2 + 20);
         } else if (this.gameState === 'paused') {
