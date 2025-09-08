@@ -545,6 +545,8 @@ class RockClimbingGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        // Disable image smoothing to keep pixel art crisp and reduce subpixel shimmer
+        this.ctx.imageSmoothingEnabled = false;
 
         // Background music
         this.music = new Audio("assets/music.mp3");
@@ -1112,10 +1114,10 @@ class RockClimbingGame {
         const density = 0.3; // How dense the particles are
         
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += 2) {
-            const worldX = x + this.camera.x;
-            const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
+            const worldX = x + this.renderCameraX;
+            const groundY = this.getGroundYAtPosition(worldX) - this.renderCameraY;
             // Estimate local slope using forward difference (in screen space)
-            const groundYNext = this.getGroundYAtPosition(worldX + 2) - this.camera.y;
+            const groundYNext = this.getGroundYAtPosition(worldX + 2) - this.renderCameraY;
             const slopePerPixel = (groundYNext - groundY) / 2; // + = rising to right, - = falling to right
             
             // Create particles only below the ground surface (in the gradient area)
@@ -1124,6 +1126,9 @@ class RockClimbingGame {
                 const shearX = -slopePerPixel * offsetY; // tilt particles upslope
                 const currentX = x + shearX;
                 const currentY = groundY + offsetY;
+                // Snap to integer pixels to prevent subpixel shimmer relative to camera
+                const px = Math.floor(currentX);
+                const py = Math.floor(currentY);
                 
                 // Use deterministic pseudo-random for consistent texture
                 const seed = ((Math.floor(worldX) * 37 + offsetY * 19) % 1000 + 1000) % 1000;
@@ -1174,23 +1179,23 @@ class RockClimbingGame {
                 const shapeType = random1;
                 if (shapeType < 0.4) {
                     // Irregular small clusters
-                    ctx.fillRect(currentX, currentY, 1, 1);
-                    if (random2 > 0.5) ctx.fillRect(currentX + 1, currentY, 1, 1);
-                    if (random3 > 0.7) ctx.fillRect(currentX, currentY + 1, 1, 1);
+                    ctx.fillRect(px, py, 1, 1);
+                    if (random2 > 0.5) ctx.fillRect(px + 1, py, 1, 1);
+                    if (random3 > 0.7) ctx.fillRect(px, py + 1, 1, 1);
                 } else if (shapeType < 0.7) {
                     // L-shaped particles
-                    ctx.fillRect(currentX, currentY, 2, 1);
-                    ctx.fillRect(currentX, currentY + 1, 1, 1);
+                    ctx.fillRect(px, py, 2, 1);
+                    ctx.fillRect(px, py + 1, 1, 1);
                 } else if (shapeType < 0.85) {
                     // Cross-shaped particles
-                    ctx.fillRect(currentX, currentY, 1, 1);
-                    if (random2 > 0.3) ctx.fillRect(currentX + 1, currentY, 1, 1);
-                    if (random3 > 0.3) ctx.fillRect(currentX, currentY + 1, 1, 1);
-                    if (random1 > 0.6) ctx.fillRect(currentX - 1, currentY, 1, 1);
+                    ctx.fillRect(px, py, 1, 1);
+                    if (random2 > 0.3) ctx.fillRect(px + 1, py, 1, 1);
+                    if (random3 > 0.3) ctx.fillRect(px, py + 1, 1, 1);
+                    if (random1 > 0.6) ctx.fillRect(px - 1, py, 1, 1);
                 } else {
                     // Scattered dots
-                    ctx.fillRect(currentX, currentY, 1, 1);
-                    if (random2 > 0.8) ctx.fillRect(currentX + 2, currentY + 1, 1, 1);
+                    ctx.fillRect(px, py, 1, 1);
+                    if (random2 > 0.8) ctx.fillRect(px + 2, py + 1, 1, 1);
                 }
             }
         }
@@ -1204,27 +1209,30 @@ class RockClimbingGame {
         
         ctx.save();
         for (let x = 0; x < this.canvas.width; x += segmentWidth) {
-            const worldXCenter = x + this.camera.x + segmentWidth / 2;
+            const worldXCenter = x + this.renderCameraX + segmentWidth / 2;
             const worldXLeft = worldXCenter - segmentWidth;
             const worldXRight = worldXCenter + segmentWidth;
             
-            // Sample neighboring ground heights and smooth
-            const gyCenter = this.getGroundYAtPosition(worldXCenter) - this.camera.y;
-            const gyLeft = this.getGroundYAtPosition(worldXLeft) - this.camera.y;
-            const gyRight = this.getGroundYAtPosition(worldXRight) - this.camera.y;
-            const groundY = (gyLeft + gyCenter + gyRight) / 3;
-            const height = this.canvas.height - groundY;
+            // Sample neighboring ground heights and smooth (use snapped render camera)
+            const gyCenter = this.getGroundYAtPosition(worldXCenter) - this.renderCameraY;
+            const gyLeft = this.getGroundYAtPosition(worldXLeft) - this.renderCameraY;
+            const gyRight = this.getGroundYAtPosition(worldXRight) - this.renderCameraY;
+            let groundY = (gyLeft + gyCenter + gyRight) / 3;
+            // Snap gradient start to integer pixel to avoid shimmer
+            const gy = Math.floor(groundY);
+            const height = this.canvas.height - gy;
             if (height <= 0) continue;
             
             // Create vertical gradient starting at the smoothed local ground
-            const gradient = ctx.createLinearGradient(0, groundY, 0, this.canvas.height);
+            const gradient = ctx.createLinearGradient(0, gy, 0, this.canvas.height);
             gradient.addColorStop(0, '#000000'); // Black at terrain line
             gradient.addColorStop(1, '#FFFFFF'); // White at bottom
             
             ctx.globalAlpha = alpha;
             ctx.fillStyle = gradient;
             // Slight overlap left/right to blend columns
-            ctx.fillRect(x - overlap, groundY, segmentWidth + 2 * overlap, height);
+            const sx = Math.floor(x - overlap);
+            ctx.fillRect(sx, gy, segmentWidth + 2 * overlap, height);
         }
         ctx.restore();
     }
@@ -2058,6 +2066,10 @@ class RockClimbingGame {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
+        // Prepare snapped camera positions for stable ground rendering
+        this.renderCameraX = Math.floor(this.camera.x);
+        this.renderCameraY = Math.floor(this.camera.y);
+
         // Draw dynamic parallax scrolling mountains
         this.drawMountains(ctx);
         
@@ -2111,26 +2123,31 @@ class RockClimbingGame {
         // Draw ground segments that follow the incline
         const segmentWidth = 20;
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += segmentWidth) {
-            const worldX = x + this.camera.x;
-            const groundY1 = this.getGroundYAtPosition(worldX) - this.camera.y;
-            const groundY2 = this.getGroundYAtPosition(worldX + segmentWidth) - this.camera.y;
+            const worldX = x + this.renderCameraX;
+            const groundY1 = this.getGroundYAtPosition(worldX) - this.renderCameraY;
+            const groundY2 = this.getGroundYAtPosition(worldX + segmentWidth) - this.renderCameraY;
+            
+            // Snap positions to integer pixels to avoid subpixel shimmer
+            const sx = Math.floor(x);
+            const gy1 = Math.floor(groundY1);
+            const gy2 = Math.floor(groundY2);
             
             // Draw main ground segment
-            ctx.fillRect(x, groundY1, segmentWidth, 4);
+            ctx.fillRect(sx, gy1, segmentWidth, 4);
             
             // Draw connecting slope if there's elevation change
-            if (Math.abs(groundY2 - groundY1) > 0.5) {
-                const steps = Math.ceil(Math.abs(groundY2 - groundY1));
+            if (Math.abs(gy2 - gy1) > 0) {
+                const steps = Math.max(1, Math.ceil(Math.abs(gy2 - gy1)));
                 for (let i = 0; i < steps; i++) {
-                    const stepX = x + (segmentWidth * i / steps);
-                    const stepY = groundY1 + ((groundY2 - groundY1) * i / steps);
+                    const stepX = Math.floor(sx + (segmentWidth * i / steps));
+                    const stepY = Math.floor(gy1 + ((gy2 - gy1) * i / steps));
                     ctx.fillRect(stepX, stepY, 2, 2);
                 }
             }
             
-            // Add ground texture details
-            ctx.fillRect(x + 5, groundY1 + 4, 10, 2);
-            ctx.fillRect(x + 2, groundY1 - 2, 16, 2);
+            // Add ground texture details (snapped)
+            ctx.fillRect(sx + 5, gy1 + 4, 10, 2);
+            ctx.fillRect(sx + 2, gy1 - 2, 16, 2);
         }
         
         // Draw gradient from terrain line to bottom of screen
@@ -2141,11 +2158,11 @@ class RockClimbingGame {
         
         // Add rocky texture details on visible terrain with dark grayscale and random colors
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += 45) {
-            const worldX = x + this.camera.x;
-            const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
+            const worldX = x + this.renderCameraX;
+            const groundY = this.getGroundYAtPosition(worldX) - this.renderCameraY;
             
-            // Use deterministic pseudo-random for consistent texture
-            const seed = (worldX * 23) % 1000;
+            // Use deterministic pseudo-random for consistent texture (integer world coords)
+            const seed = (Math.floor(worldX) * 23) % 1000;
             const random1 = (seed * 9301 + 49297) % 233280 / 233280;
             const random2 = ((seed + 1) * 9301 + 49297) % 233280 / 233280;
             const random3 = ((seed + 2) * 9301 + 49297) % 233280 / 233280;
@@ -2163,8 +2180,11 @@ class RockClimbingGame {
             const gHex = Math.floor(g).toString(16).padStart(2, '0');
             const bHex = Math.floor(b).toString(16).padStart(2, '0');
             
+            // Snap to integer pixel positions
+            const sx = Math.floor(x);
+            const gy = Math.floor(groundY);
             ctx.fillStyle = `#${rHex}${gHex}${bHex}`;
-            ctx.fillRect(x + 10, groundY - 6, 8, 6);
+            ctx.fillRect(sx + 10, gy - 6, 8, 6);
             
             // Second texture element with different color
             const baseGray2 = Math.floor(20 + random2 * 60);
@@ -2177,7 +2197,7 @@ class RockClimbingGame {
             const b2Hex = Math.floor(b2).toString(16).padStart(2, '0');
             
             ctx.fillStyle = `#${r2Hex}${g2Hex}${b2Hex}`;
-            ctx.fillRect(x + 25, groundY - 4, 6, 4);
+            ctx.fillRect(sx + 25, gy - 4, 6, 4);
         }
         
         // Draw leaves
