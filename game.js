@@ -1114,18 +1114,24 @@ class RockClimbingGame {
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += 2) {
             const worldX = x + this.camera.x;
             const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
+            // Estimate local slope using forward difference (in screen space)
+            const groundYNext = this.getGroundYAtPosition(worldX + 2) - this.camera.y;
+            const slopePerPixel = (groundYNext - groundY) / 2; // + = rising to right, - = falling to right
             
             // Create particles only below the ground surface (in the gradient area)
             for (let offsetY = 2; offsetY <= 50; offsetY += 1) {
+                // Shear particles along slope so they align more naturally with terrain
+                const shearX = -slopePerPixel * offsetY; // tilt particles upslope
+                const currentX = x + shearX;
                 const currentY = groundY + offsetY;
                 
                 // Use deterministic pseudo-random for consistent texture
-                const seed = (worldX * 37 + offsetY * 19) % 1000;
+                const seed = ((Math.floor(worldX) * 37 + offsetY * 19) % 1000 + 1000) % 1000;
                 const random1 = (seed * 9301 + 49297) % 233280 / 233280;
                 const random2 = ((seed + 1) * 9301 + 49297) % 233280 / 233280;
                 const random3 = ((seed + 2) * 9301 + 49297) % 233280 / 233280;
                 
-                // Skip particles based on density
+                // Base density gate
                 if (random1 > density) continue;
                 
                 // Stop particles at bottom of screen
@@ -1134,7 +1140,12 @@ class RockClimbingGame {
                 // Vary particle density based on distance from ground surface
                 // Very dense near floor line, very sparse near bottom
                 const distanceFromGround = offsetY;
-                const densityFalloff = Math.max(0.01, Math.pow(1 - (distanceFromGround / 50), 4));
+                let densityFalloff = Math.max(0.01, Math.pow(1 - (distanceFromGround / 50), 4));
+                
+                // Reduce density additionally on steep down slopes to avoid heavy streaking
+                // Negative slopePerPixel indicates ground falls to the right
+                const downslopeFactor = 1 - Math.min(Math.max(-slopePerPixel * 0.6, 0), 0.6); // 1.0 .. 0.4
+                densityFalloff *= downslopeFactor;
                 if (random2 > densityFalloff) continue;
                 
                 // Create varied grayscale particles with randomized color and opacity
@@ -1153,7 +1164,6 @@ class RockClimbingGame {
                 // Add random variation to the gray color
                 const colorVariation = 30;
                 const finalGray = Math.max(0, Math.min(255, grayValue + (random1 - 0.5) * colorVariation));
-                const grayHex = Math.floor(finalGray).toString(16).padStart(2, '0');
                 
                 // Randomize opacity (0.2 to 1.0)
                 const opacity = 0.2 + (random2 * 0.8);
@@ -1164,44 +1174,59 @@ class RockClimbingGame {
                 const shapeType = random1;
                 if (shapeType < 0.4) {
                     // Irregular small clusters
-                    ctx.fillRect(x, currentY, 1, 1);
-                    if (random2 > 0.5) ctx.fillRect(x + 1, currentY, 1, 1);
-                    if (random3 > 0.7) ctx.fillRect(x, currentY + 1, 1, 1);
+                    ctx.fillRect(currentX, currentY, 1, 1);
+                    if (random2 > 0.5) ctx.fillRect(currentX + 1, currentY, 1, 1);
+                    if (random3 > 0.7) ctx.fillRect(currentX, currentY + 1, 1, 1);
                 } else if (shapeType < 0.7) {
                     // L-shaped particles
-                    ctx.fillRect(x, currentY, 2, 1);
-                    ctx.fillRect(x, currentY + 1, 1, 1);
+                    ctx.fillRect(currentX, currentY, 2, 1);
+                    ctx.fillRect(currentX, currentY + 1, 1, 1);
                 } else if (shapeType < 0.85) {
                     // Cross-shaped particles
-                    ctx.fillRect(x, currentY, 1, 1);
-                    if (random2 > 0.3) ctx.fillRect(x + 1, currentY, 1, 1);
-                    if (random3 > 0.3) ctx.fillRect(x, currentY + 1, 1, 1);
-                    if (random1 > 0.6) ctx.fillRect(x - 1, currentY, 1, 1);
+                    ctx.fillRect(currentX, currentY, 1, 1);
+                    if (random2 > 0.3) ctx.fillRect(currentX + 1, currentY, 1, 1);
+                    if (random3 > 0.3) ctx.fillRect(currentX, currentY + 1, 1, 1);
+                    if (random1 > 0.6) ctx.fillRect(currentX - 1, currentY, 1, 1);
                 } else {
                     // Scattered dots
-                    ctx.fillRect(x, currentY, 1, 1);
-                    if (random2 > 0.8) ctx.fillRect(x + 2, currentY + 1, 1, 1);
+                    ctx.fillRect(currentX, currentY, 1, 1);
+                    if (random2 > 0.8) ctx.fillRect(currentX + 2, currentY + 1, 1, 1);
                 }
             }
         }
     }
 
-    // Draw gradient from terrain line to bottom of screen (black to white)
+    // Draw gradient from terrain line to bottom of screen (black to white), per-column from local floor
     drawUndergroundGradient(ctx) {
-        const segmentWidth = 4;
+        const segmentWidth = 2; // small width to minimize visible seams
+        const overlap = 1; // overlap columns slightly for blending
+        const alpha = 0.9; // slight transparency to blend overlaps
         
+        ctx.save();
         for (let x = 0; x < this.canvas.width; x += segmentWidth) {
-            const worldX = x + this.camera.x;
-            const groundY = this.getGroundYAtPosition(worldX) - this.camera.y;
+            const worldXCenter = x + this.camera.x + segmentWidth / 2;
+            const worldXLeft = worldXCenter - segmentWidth;
+            const worldXRight = worldXCenter + segmentWidth;
             
-            // Create vertical gradient from ground to bottom of screen
+            // Sample neighboring ground heights and smooth
+            const gyCenter = this.getGroundYAtPosition(worldXCenter) - this.camera.y;
+            const gyLeft = this.getGroundYAtPosition(worldXLeft) - this.camera.y;
+            const gyRight = this.getGroundYAtPosition(worldXRight) - this.camera.y;
+            const groundY = (gyLeft + gyCenter + gyRight) / 3;
+            const height = this.canvas.height - groundY;
+            if (height <= 0) continue;
+            
+            // Create vertical gradient starting at the smoothed local ground
             const gradient = ctx.createLinearGradient(0, groundY, 0, this.canvas.height);
-            gradient.addColorStop(0, '#202020'); // Very dark gray at terrain line
+            gradient.addColorStop(0, '#000000'); // Black at terrain line
             gradient.addColorStop(1, '#FFFFFF'); // White at bottom
             
+            ctx.globalAlpha = alpha;
             ctx.fillStyle = gradient;
-            ctx.fillRect(x, groundY, segmentWidth, this.canvas.height - groundY);
+            // Slight overlap left/right to blend columns
+            ctx.fillRect(x - overlap, groundY, segmentWidth + 2 * overlap, height);
         }
+        ctx.restore();
     }
 
     // Draw all mountain layers with parallax effect (triangular mountains)
