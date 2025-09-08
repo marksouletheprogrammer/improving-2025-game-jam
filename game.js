@@ -696,6 +696,8 @@ class RockClimbingGame {
         // Visual overlap to slightly embed rocks into ground (in pixels)
         // Set to 0 to avoid appearing underground on steep/wavy terrain
         this.obstacleGroundOverlap = 0;
+        // Feature flag: render obstacles rotated to match terrain slope
+        this.useRotatedObstacleRendering = true;
         
         // Terrain chunk management system
         this.terrainChunkManager = new TerrainChunkManager(this);
@@ -743,6 +745,14 @@ class RockClimbingGame {
             // Position obstacle to overlap floor slightly for better visual grounding
             // Allow slight overlap into the ground for solid appearance
             obstacle.y = floorY - obstacle.height + this.obstacleGroundOverlap;
+            
+            // Compute and store local slope angle for rendering alignment
+            const sampleDx = 8;
+            const yPrev = this.terrainChunkManager.getTerrainYAtWorldX(worldX - sampleDx);
+            const yNext = this.terrainChunkManager.getTerrainYAtWorldX(worldX + sampleDx);
+            const dy = yNext - yPrev; // positive if rising to the right
+            const dx = sampleDx * 2;
+            obstacle.angle = Math.atan2(dy, dx); // radians
             
             // Remove any floating properties that might be applied from leaf logic
             delete obstacle.floatOffset;
@@ -1996,6 +2006,13 @@ class RockClimbingGame {
             const trueTopY = this.terrainChunkManager.getTerrainYAtWorldX(obstacle.x) - obstacle.height + this.obstacleGroundOverlap;
             // Always align to exact terrain to prevent any visual mismatch
             obstacle.y = trueTopY;
+            // Recompute local slope angle so rendering stays aligned on moving camera/segments
+            const sampleDx = 8;
+            const yPrev = this.terrainChunkManager.getTerrainYAtWorldX(obstacle.x - sampleDx);
+            const yNext = this.terrainChunkManager.getTerrainYAtWorldX(obstacle.x + sampleDx);
+            const dy = yNext - yPrev;
+            const dx = sampleDx * 2;
+            obstacle.angle = Math.atan2(dy, dx);
         });
         
         // Update leaves - leaves are also stationary world objects, only update floating animation
@@ -2238,6 +2255,133 @@ class RockClimbingGame {
             ctx.fillRect(sx + 25, gy - 4, 6, 4);
         }
         
+        // Draw obstacles aligned to local terrain slope
+        if (this.renderObstacles && this.useRotatedObstacleRendering) this.obstacles.forEach(obstacle => {
+            // Only draw if on or near screen
+            if (obstacle.x + obstacle.width < this.camera.x - 50 || obstacle.x - this.camera.x > this.canvas.width + 50) return;
+            const screenX = Math.floor(obstacle.x - this.camera.x);
+            // Use true floor for rendering baseline
+            const floorY = Math.floor(this.terrainChunkManager.getTerrainYAtWorldX(obstacle.x) - this.camera.y);
+            const angle = obstacle.angle || 0;
+            
+            ctx.save();
+            ctx.translate(screenX, floorY);
+            ctx.rotate(angle);
+            // Draw soft ground shadow band under the rock base (aligned to slope)
+            {
+                const ow = Math.floor(obstacle.width);
+                const shadowH = Math.max(2, Math.floor(ow * 0.08)); // thickness scales with width
+                const baseAlpha = 0.25; // peak opacity at the top band
+                for (let i = 0; i < shadowH; i++) {
+                    const t = i / shadowH;
+                    const alpha = baseAlpha * (1 - t); // fade out
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = '#000000';
+                    // In rotated frame, baseline is at y=0; shadow drops slightly below
+                    ctx.fillRect(0, 1 + i, ow, 1);
+                }
+                ctx.globalAlpha = 1.0;
+            }
+
+            // Draw obstacle as a richer pixel-art rock whose base touches the rotated baseline
+            const ow = Math.floor(obstacle.width);
+            const oh = Math.floor(obstacle.height);
+
+            // Subtle per-obstacle variation using a deterministic seed
+            const seed = ((Math.floor(obstacle.x) * 97 + obstacle.type * 13) % 233280 + 233280) % 233280;
+            const rand = (n) => (((seed * (9301 + n*37) + 49297) % 233280) / 233280);
+
+            // Per-obstacle gray tint
+            const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+            const toHex2 = (g) => clamp(Math.floor(g), 0, 255).toString(16).padStart(2, '0');
+            const col = (g) => `#${toHex2(g)}${toHex2(g)}${toHex2(g)}`;
+            const tint = (rand(0) - 0.5) * 20; // -10..+10 gray shift
+            const base = col(48 + tint);
+            const shadow = col(28 + tint);
+            const mid = col(58 + tint);
+            const light = col(96 + tint);
+            const rim = col(20 + tint);
+
+            // Helper to draw a capped rect
+            const r = (x, y, w, h, color) => { ctx.fillStyle = color; ctx.fillRect(x, y, w, h); };
+
+            // Base irregular silhouette per type with variation params
+            // Origin is (0,0) at ground contact left; rock extends upward (-y)
+            switch (obstacle.type) {
+                case 0: { // Small chunky rock
+                    const insetL = Math.floor(rand(1) * 3); // 0-2
+                    const insetR = Math.floor(rand(2) * 3);
+                    r(0, -oh, ow, oh, base);
+                    // Top bevel
+                    r(1 + insetL, -oh + 2, ow - 2 - insetL - insetR, 3, light);
+                    // Side bevels
+                    r(0, -oh + 6, 2 + insetL, oh - 8, light);
+                    r(ow - (2 + insetR), -oh + 8, 2 + insetR, oh - 10, mid);
+                    // Bottom shadow band
+                    r(1, -4, ow - 2, 3, shadow);
+                    // Cracks
+                    if (rand(3) > 0.35) r(2 + insetL, -Math.floor(oh*0.6), 3, 1, rim);
+                    if (rand(4) > 0.55) r(ow - 5 - insetR, -Math.floor(oh*0.4), 4, 1, rim);
+                    // Random chip at base
+                    if (rand(5) > 0.7) r(Math.floor(ow*0.4), -2, 3, 2, shadow);
+                    break;
+                }
+                case 1: { // Medium faceted rock
+                    const bevel = 2 + Math.floor(rand(6) * 3); // 2-4
+                    r(0, -oh, ow, oh, base);
+                    r(bevel, -oh + 3, ow - bevel*2, 3, light);
+                    r(1, -oh + Math.floor(oh*0.35), ow - 2, 2, mid);
+                    r(2, -oh + Math.floor(oh*0.65), ow - 5, 2, shadow);
+                    // Side facets
+                    r(0, -oh + 8, bevel, oh - 14, light);
+                    r(ow - bevel, -oh + 10, bevel, oh - 16, shadow);
+                    // Cracks
+                    if (rand(7) > 0.3) r(Math.floor(ow*0.35), -Math.floor(oh*0.55), 5, 1, rim);
+                    if (rand(8) > 0.6) r(Math.floor(ow*0.6), -Math.floor(oh*0.25), 4, 1, rim);
+                    if (rand(9) > 0.75) r(Math.floor(ow*0.2), -Math.floor(oh*0.3), 3, 1, rim);
+                    break;
+                }
+                case 2: { // Wide low slab
+                    const topRise = Math.max(2, Math.floor(oh*(0.2 + rand(10)*0.15)));
+                    r(0, -oh, ow, oh, base);
+                    r(2, -oh + 2, ow - 4, 3, light);
+                    r(1, -topRise, ow - 2, 2, mid);
+                    r(0, -2, ow, 2, shadow);
+                    // Cross cracks
+                    if (rand(11) > 0.45) r(Math.floor(ow*0.3), -Math.floor(oh*0.5), 6, 1, rim);
+                    if (rand(12) > 0.45) r(Math.floor(ow*0.65), -Math.floor(oh*0.4), 5, 1, rim);
+                    break;
+                }
+                case 3: { // Tall pillar
+                    const facetW = 2 + Math.floor(rand(13) * 2);
+                    r(0, -oh, ow, oh, base);
+                    r(1, -oh + 2, ow - 2, 3, light);
+                    // Vertical facet
+                    r(2, -oh + 6, facetW, oh - 12, light);
+                    r(ow - (facetW+1), -oh + 8, facetW-1, oh - 14, shadow);
+                    r(1, -Math.floor(oh*0.5), ow - 2, 2, mid);
+                    // Small chips
+                    if (rand(14) > 0.5) r(2, -Math.floor(oh*0.7), 2, 2, rim);
+                    if (rand(15) > 0.6) r(ow - 4, -Math.floor(oh*0.35), 2, 2, rim);
+                    break;
+                }
+                default: { // Super wide boulder
+                    const capInset = Math.floor(rand(16) * 3) + 1;
+                    r(0, -oh, ow, oh, base);
+                    r(capInset, -oh + 3, ow - capInset*2, 3, light);
+                    r(2, -oh + Math.floor(oh*0.4), ow - 8, 2, mid);
+                    r(1, -oh + Math.floor(oh*0.7), ow - 2, 2, shadow);
+                    // Random facets
+                    if (rand(17) > 0.35) r(Math.floor(ow*0.15), -Math.floor(oh*0.6), 6, 2, light);
+                    if (rand(18) > 0.45) r(Math.floor(ow*0.55), -Math.floor(oh*0.35), 8, 2, shadow);
+                    // Cracks
+                    if (rand(19) > 0.55) r(Math.floor(ow*0.35), -Math.floor(oh*0.5), 7, 1, rim);
+                    break;
+                }
+            }
+            ctx.restore();
+        });
+        
         // Draw leaves
         this.leaves.forEach(leaf => {
             if (!leaf.collected) {
@@ -2393,8 +2537,8 @@ class RockClimbingGame {
         // Beard
         ctx.fillRect(px + 24, py + 20, 2, 6);
         
-        // Draw obstacles (Rock formations) - different shapes and sizes
-        if (this.renderObstacles) {
+        // Draw obstacles (Rock formations) - legacy axis-aligned rendering (only when rotated rendering is OFF)
+        if (this.renderObstacles && !this.useRotatedObstacleRendering) {
             ctx.fillStyle = '#000000';
             this.obstacles.forEach(obstacle => {
             // Use stored grounded position (kept in sync with terrain)
