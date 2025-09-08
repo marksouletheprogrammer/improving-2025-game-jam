@@ -303,16 +303,19 @@ class TerrainGenerator {
             const x = chunk.startX + seededLeafRandom() * chunk.width;
             // Use baseline elevation during generation; leaves float above and don't need exact grounding
             const groundY = game.getCurrentGroundY(x);
+            // Store a consistent hover height per-leaf so we can precisely reposition to terrain later
+            const hoverHeight = 30 + seededLeafRandom() * 50;
             
             const leaf = {
                 x: x,
-                y: groundY - 30 - seededLeafRandom() * 50, // Float above ground
+                y: groundY - hoverHeight, // Base Y; floating animation applied at render
                 width: 12,
                 height: 8,
                 collected: false,
                 floatOffset: seededLeafRandom() * Math.PI * 2,
                 floatSpeed: seededLeafRandom() * 0.1 + 0.05,
-                chunkIndex: chunk.index
+                chunkIndex: chunk.index,
+                hoverHeight: hoverHeight
             };
             
             leaves.push(leaf);
@@ -724,6 +727,8 @@ class RockClimbingGame {
                 
                 // Reposition obstacles to match floor collision detection
                 this.repositionObstaclesToFloor();
+                // Reposition leaves to hover above the actual floor (handles raised floors)
+                this.repositionLeavesToFloor();
                 
                 // Position player on the terrain at starting position
                 this.positionPlayerOnTerrain();
@@ -762,18 +767,32 @@ class RockClimbingGame {
         console.log('Repositioned obstacles to be static and grounded');
     }
     
+    // Reposition leaves so they always hover above the actual terrain surface
+    repositionLeavesToFloor() {
+        this.leaves.forEach(leaf => {
+            const worldX = leaf.x;
+            const floorY = this.terrainChunkManager.getTerrainYAtWorldX(worldX);
+            // Base Y without float animation; render will add a small sine offset
+            const hover = typeof leaf.hoverHeight === 'number' ? leaf.hoverHeight : 40;
+            leaf.y = floorY - hover;
+        });
+        console.log('Repositioned leaves relative to terrain');
+    }
+    
     // Position player on the terrain surface at starting position
     positionPlayerOnTerrain() {
-        const startX = 100; // Starting position
+        const startX = 100; // Starting player X position
         const groundY = this.terrainChunkManager.getTerrainYAtWorldX(startX);
         
         this.player.x = startX;
         this.player.y = groundY - this.player.height;
+        this.player.velocityX = 0;
         this.player.velocityY = 0;
-        this.player.isOnGround = true;
+        this.player.jumping = false;
+        this.player.grounded = true;
+        this.player.state = 'idle';
         
         console.log(`Player positioned at (${this.player.x}, ${this.player.y}) on terrain height ${groundY}`);
-        console.log(`Game state: ${this.gameState}, terrain end at: ${this.terrainChunkManager.totalChunkWidth}`);
     }
     
     // Trigger victory when player reaches end of terrain
@@ -2007,8 +2026,13 @@ class RockClimbingGame {
             obstacle.angle = Math.atan2(dy, dx);
         });
         
-        // Update leaves - leaves are also stationary world objects, only update floating animation
+        // Update leaves - keep them hovering relative to true terrain and update floating animation
         this.leaves = this.leaves.filter(leaf => {
+            // Snap base Y to terrain every frame so raised floors don't cover leaves
+            const floorY = this.terrainChunkManager.getTerrainYAtWorldX(leaf.x);
+            const hover = typeof leaf.hoverHeight === 'number' ? leaf.hoverHeight : 40;
+            leaf.y = floorY - hover;
+
             // Update floating animation for visual effect
             leaf.floatOffset += leaf.floatSpeed;
             
