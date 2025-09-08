@@ -1120,8 +1120,16 @@ class RockClimbingGame {
             const groundYNext = this.getGroundYAtPosition(worldX + 2) - this.renderCameraY;
             const slopePerPixel = (groundYNext - groundY) / 2; // + = rising to right, - = falling to right
             
+            // Increase minimum offset below the surface when on slopes to avoid stair-like specks.
+            // On downslopes (negative slopePerPixel), be stricter.
+            const absSlope = Math.abs(slopePerPixel);
+            let minOffset = 2;
+            if (absSlope >= 0.25) minOffset = 8;      // noticeable slope
+            if (absSlope >= 0.5) minOffset = 12;      // steep slope
+            if (slopePerPixel < -0.25) minOffset += 2; // extra padding for downslopes
+
             // Create particles only below the ground surface (in the gradient area)
-            for (let offsetY = 2; offsetY <= 50; offsetY += 1) {
+            for (let offsetY = minOffset; offsetY <= 50; offsetY += 1) {
                 // Shear particles along slope so they align more naturally with terrain
                 const shearX = -slopePerPixel * offsetY; // tilt particles upslope
                 const currentX = x + shearX;
@@ -1149,7 +1157,7 @@ class RockClimbingGame {
                 
                 // Reduce density additionally on steep down slopes to avoid heavy streaking
                 // Negative slopePerPixel indicates ground falls to the right
-                const downslopeFactor = 1 - Math.min(Math.max(-slopePerPixel * 0.6, 0), 0.6); // 1.0 .. 0.4
+                const downslopeFactor = 1 - Math.min(Math.max(-slopePerPixel * 0.8, 0), 0.7); // stronger reduction: 1.0 .. 0.3
                 densityFalloff *= downslopeFactor;
                 if (random2 > densityFalloff) continue;
                 
@@ -2120,34 +2128,44 @@ class RockClimbingGame {
         // Draw inclined terrain
         ctx.fillStyle = '#000000';
         
-        // Draw ground segments that follow the incline
-        const segmentWidth = 20;
-        for (let x = this.groundOffset; x < this.canvas.width + 50; x += segmentWidth) {
+        // Draw ground as a continuous band that follows the terrain profile to avoid stepping
+        const sampleStep = 2; // small step for smooth silhouette while avoiding heavy cost
+        ctx.beginPath();
+        // Top edge (terrain line)
+        let gy0 = Math.floor(this.getGroundYAtPosition(this.renderCameraX) - this.renderCameraY);
+        ctx.moveTo(0, gy0);
+        for (let x = 0; x <= this.canvas.width; x += sampleStep) {
             const worldX = x + this.renderCameraX;
-            const groundY1 = this.getGroundYAtPosition(worldX) - this.renderCameraY;
-            const groundY2 = this.getGroundYAtPosition(worldX + segmentWidth) - this.renderCameraY;
-            
-            // Snap positions to integer pixels to avoid subpixel shimmer
-            const sx = Math.floor(x);
-            const gy1 = Math.floor(groundY1);
-            const gy2 = Math.floor(groundY2);
-            
-            // Draw main ground segment
-            ctx.fillRect(sx, gy1, segmentWidth, 4);
-            
-            // Draw connecting slope if there's elevation change
-            if (Math.abs(gy2 - gy1) > 0) {
-                const steps = Math.max(1, Math.ceil(Math.abs(gy2 - gy1)));
-                for (let i = 0; i < steps; i++) {
-                    const stepX = Math.floor(sx + (segmentWidth * i / steps));
-                    const stepY = Math.floor(gy1 + ((gy2 - gy1) * i / steps));
-                    ctx.fillRect(stepX, stepY, 2, 2);
-                }
+            const gy = Math.floor(this.getGroundYAtPosition(worldX) - this.renderCameraY);
+            ctx.lineTo(Math.floor(x), gy);
+        }
+        // Bottom edge (offset band thickness)
+        const bandThickness = 4;
+        const rightGy = Math.floor(this.getGroundYAtPosition(this.renderCameraX + this.canvas.width) - this.renderCameraY) + bandThickness;
+        ctx.lineTo(this.canvas.width, rightGy);
+        for (let x = this.canvas.width; x >= 0; x -= sampleStep) {
+            const worldX = x + this.renderCameraX;
+            const gy = Math.floor(this.getGroundYAtPosition(worldX) - this.renderCameraY) + bandThickness;
+            ctx.lineTo(Math.floor(x), gy);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // Optional small detail rectangles:
+        // - Only when the area is flat both ahead and behind
+        // - Place one slightly above and one slightly below the ground line for a crisp rocky edge on flats
+        const detailStep = 20;
+        for (let x = 0; x < this.canvas.width; x += detailStep) {
+            const worldX = x + this.renderCameraX;
+            const gyCenter = Math.floor(this.getGroundYAtPosition(worldX) - this.renderCameraY);
+            const gyNext = Math.floor(this.getGroundYAtPosition(worldX + detailStep) - this.renderCameraY);
+            const gyPrev = Math.floor(this.getGroundYAtPosition(worldX - detailStep) - this.renderCameraY);
+            if (gyNext === gyCenter && gyPrev === gyCenter) {
+                const sx = Math.floor(x);
+                // One below the ground band edge, one hugging slightly above the edge
+                ctx.fillRect(sx + 5, gyCenter + 4, 10, 2);
+                ctx.fillRect(sx + 2, gyCenter - 2, 16, 2);
             }
-            
-            // Add ground texture details (snapped)
-            ctx.fillRect(sx + 5, gy1 + 4, 10, 2);
-            ctx.fillRect(sx + 2, gy1 - 2, 16, 2);
         }
         
         // Draw gradient from terrain line to bottom of screen
@@ -2160,6 +2178,25 @@ class RockClimbingGame {
         for (let x = this.groundOffset; x < this.canvas.width + 50; x += 45) {
             const worldX = x + this.renderCameraX;
             const groundY = this.getGroundYAtPosition(worldX) - this.renderCameraY;
+
+            // Do not place rocky texture on slopes (upslope or downslope).
+            // Use strict detection: if there's any meaningful change ahead or behind, skip.
+            const sampleDx = 12; // pixels to sample for slope detection
+            const groundYNext = this.getGroundYAtPosition(worldX + sampleDx) - this.renderCameraY;
+            const groundYPrev = this.getGroundYAtPosition(worldX - sampleDx) - this.renderCameraY;
+            const slopeEps = 0.5; // treat differences >= 0.5px as a slope
+            if (Math.abs(groundYNext - groundY) >= slopeEps || Math.abs(groundYPrev - groundY) >= slopeEps) {
+                continue; // skip rocky texture on any slope
+            }
+
+            // Additional flatness requirement: ensure a wider neighborhood is flat
+            // Check ±24px in 4px steps; if any height differs, skip
+            let isFlatNeighborhood = true;
+            for (let dx = -24; dx <= 24; dx += 4) {
+                const gyN = this.getGroundYAtPosition(worldX + dx) - this.renderCameraY;
+                if (Math.abs(gyN - groundY) >= slopeEps) { isFlatNeighborhood = false; break; }
+            }
+            if (!isFlatNeighborhood) continue;
             
             // Use deterministic pseudo-random for consistent texture (integer world coords)
             const seed = (Math.floor(worldX) * 23) % 1000;
@@ -2184,6 +2221,7 @@ class RockClimbingGame {
             const sx = Math.floor(x);
             const gy = Math.floor(groundY);
             ctx.fillStyle = `#${rHex}${gHex}${bHex}`;
+            // On flats, allow prominent rocky nub right at the ground line
             ctx.fillRect(sx + 10, gy - 6, 8, 6);
             
             // Second texture element with different color
